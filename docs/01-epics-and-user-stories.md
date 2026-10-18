@@ -107,6 +107,7 @@ Acceptance criteria
 - Given a city and category listing page, when it loads, then the heading names the city and category in plain English (e.g. "Dog groomers in Gurgaon") and the result count is shown.
 - Given a city and category combination with no published providers, when I open it, then I see an empty state that offers the other categories in that city and the same category in neighbouring cities, and the page is not reported as an error.
 - Given I am on a city and category listing, when I open a locality from the locality list, then I see the same category filtered to that locality.
+- Given a locality and category combination with no published providers, when I open it, then I see the equivalent empty state at locality level - the other categories in that locality and the same category in neighbouring localities of the same city - and the page is not reported as an error (E9-S1 relies on this page existing and being useful).
 - Given a category that is no longer active, when I try to open its listing, then I am sent to the city page rather than shown an empty page.
 - Given I open a listing page, when I check the page address, then it reflects the city and category so I can bookmark and share it.
 
@@ -640,7 +641,7 @@ A published listing has two kinds of editable field. The split below is the sing
 
 - The line is identity and claims we have vouched for (gated) versus day-to-day trading information a provider must be able to correct the same morning (ungated).
 - Photos are deliberately asymmetric. Adding one puts unvetted imagery in front of customers, so it waits for review; removing one is how a provider fixes a wrong, embarrassing or privacy-breaking photo, so it must never wait for us. Reordering only rearranges photos we have already approved.
-- A provider may have at most one pending **field** change at a time; saving again replaces the pending one, which has not been reviewed yet. Added **photos** are the exception: each queues and is approved or rejected on its own, so one slow photo never holds up the rest.
+- A provider may have at most one pending **set of gated field changes** at a time, however many fields were saved together. Saving again replaces that whole pending set with the new one - the admin always reviews the provider's latest intent, never a queue of successive drafts, and approving it applies every field in the set at once. The admin sees the set with each changed field highlighted against the live value (E8-S2). Added **photos** are the exception: each queues and is approved or rejected on its own, so one slow photo never holds up the rest.
 - Ungated edits stay live while a gated change is pending. The two never block each other.
 - A listing that is not yet public (draft, submitted, or rejected and being reworked) has no gated fields - nothing is public, so everything is edited freely until it is submitted.
 - Edits made by an admin are never gated, on any field (E8-S5).
@@ -802,7 +803,7 @@ As an admin, I want to check listings before they go public, so that the directo
 
 Acceptance criteria
 - Given a provider has submitted a new profile, when I open the review queue, then it appears with the business name, categories, location, services, photos and who submitted it, oldest first.
-- Given a provider has edited a gated field on a live profile ("Shared rules for E7"), when I open the queue item, then I see the current public version and the proposed version side by side with the changes highlighted, and only gated fields appear in the diff.
+- Given a provider has edited a gated field on a live profile ("Shared rules for E7"), when I open the queue item, then I see the current public version and the proposed version side by side with the changes highlighted, and only gated fields appear in the diff. One queue item is one pending set of changes, however many fields it contains; approving or rejecting it decides the whole set at once.
 - Given a provider has added photos to a live profile, when I open the queue item, then each new photo is shown and I can approve or reject it with a reason.
 - Given a queue item, when I approve it, then the listing becomes public (or the edit goes live), the provider is emailed, and the item leaves the queue.
 - Given a queue item, when I reject it, then I must give a reason, the listing stays private (or the live version stays unchanged), the provider sees the reason and can resubmit, and the item leaves the queue (ADR-017).
@@ -903,7 +904,9 @@ Acceptance criteria
 - Given a city and category combination with at least one published provider, when a crawler that does not run JavaScript fetches the page, then the returned HTML already contains the page title, one H1, an introduction paragraph and the list of providers with their names, localities and starting prices.
 - Given a locality, category and city combination with at least 3 published providers, when it is fetched the same way, then the same applies (ADR-029).
 - Given a locality and category combination with fewer than 3 published providers, when a crawler that does not run JavaScript fetches it, then the returned HTML carries that page's own title and meta description and a canonical address pointing at the matching city and category page; the page is **not** marked "do not index", and it is not in the sitemap (ADR-029).
-- Given such a below-threshold page, when a person opens it in a browser, then it is a normal working page showing the one or two providers it does have, not an error and not a redirect.
+- Given such a below-threshold page with at least one published provider, when a person opens it in a browser, then it is a normal working page showing the one or two providers it does have, not an error and not a redirect.
+- Given a locality and category combination with **no** published providers, when a person opens it in a browser, then it is a normal working page - not an error and not a redirect - showing the same empty state as the city-level one in E2-S1: the other categories in that locality and the same category in neighbouring localities of that city.
+- Given that same zero-provider page, when a crawler that does not run JavaScript fetches it, then the returned HTML carries that page's own title and meta description, a canonical address pointing at the matching city and category page, and those empty-state links as real content, so it is never a blank page that reads as a soft 404 (06-nfr.md); like any below-threshold page it is kept out of the sitemap and is **not** marked "do not index" (ADR-029).
 - Given a below-threshold page crosses to 3 published providers, when the next scheduled refresh runs, then it is prerendered, enters the sitemap, and its canonical becomes its own address.
 - Given a page that is prerendered and in the sitemap, when it is fetched, then its canonical is its own address and never the city and category page.
 - Given any prerendered page, when I open it in a browser, then it becomes a normal interactive page - filters, sorting and paging all work.
@@ -1195,7 +1198,7 @@ These P0 stories are larger than one developer-day. The Project Manager splits t
 | E7-S3 Services and areas | a) services CRUD, b) service areas and travel fees |
 | E8-S2 Review queue | a) new-profile approval, b) profile-edit diff and approval, c) verification documents |
 | E8-S6 CSV import | a) dry run and validation report, b) apply, provenance and row report, c) undo a batch |
-| E9-S1 Prerendered pages | a) city-category, b) locality-category plus the thin-page rule |
+| E9-S1 Prerendered pages | a) city-category, b) locality-category plus the thin-page rule, c) the below-threshold and zero-provider path (own meta, canonical, empty state) |
 | E12-S3 Deployment | a) staging pipeline, b) production pipeline and approval, c) domains and TLS |
 
 ## Traceability
