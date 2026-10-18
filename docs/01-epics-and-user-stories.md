@@ -468,7 +468,7 @@ Acceptance criteria
 - Given a request of mine that is completed, when I open it, then I am offered "Write a review" for that provider.
 - Given I write a review, when I submit it, then I must have given a star rating of 1 to 5; a title and body are optional, and up to 3 photos may be attached.
 - Given I submit a review, when it succeeds, then it appears on the provider's profile attributed to my first name and the month of the visit.
-- Given I have already reviewed this provider, when I complete another request with them, then I am not offered a second review; I am offered to update my existing one instead (within the window in E5-S5).
+- Given I have already reviewed this provider and have not deleted that review, when I complete another request with them, then I am not offered a second review; I am offered to update my existing one instead (within the window in E5-S5).
 - Given I deleted my review for this provider, when I complete another request with them, then I am told I have already used my review for this provider and no new review is offered (ADR-031).
 - Given a request that is pending, accepted, declined, expired or cancelled, when I open it, then no review option is offered.
 - Given someone else's completed request, when I try to review against it, then the attempt is refused.
@@ -528,7 +528,7 @@ Acceptance criteria
 - Given I delete my review within the window, when the deletion succeeds, then my one review for that provider is spent: no new review is offered for that provider or for the completed request it came from, then or later (ADR-031).
 - Given I choose "Delete", when I am asked to confirm, then I am told the review is gone for good and that I will not be able to write another one for this provider, and "Edit" is offered as the alternative.
 - Given a review I posted more than 7 days ago, when I open it, then no edit or delete action is offered and I am told the window has closed.
-- Given I complete another request with a provider I have already reviewed, when the earlier review is still inside its 7-day window, then I am offered to update it (E5-S1); when the window has closed, then I am told my existing review stands and no second review is created.
+- Given I complete another request with a provider I have already reviewed and have not deleted that review, when the earlier review is still inside its 7-day window, then I am offered to update it (E5-S1); when the window has closed, then I am told my existing review stands and no second review is created. A review I deleted is covered by the spent-review criterion above and by E5-S1, not by this one.
 - Given my edited review contains contact details, when I save it, then it is held for moderation exactly as a new review would be (E5-S1) and the previous version stays public meanwhile.
 - Given an admin hid my review, when I try to edit it inside the window, then the edit is refused and I am shown why it was hidden.
 - Given someone else's review, when I try to edit or delete it, then the attempt is refused.
