@@ -1,6 +1,11 @@
 # UrbanPetly - Specification Set
 
-Status: DRAFT v0.1 (2026-10-18). Owner: Product Owner. Reviewer: founder.
+Status: v1.0 CANDIDATE (2026-10-18). Owner: Product Owner. Reviewer: founder.
+
+Spec v1.0 scope is frozen: every P0 story in [01](01-epics-and-user-stories.md) carries Given/When/Then
+acceptance criteria and an explicit out-of-scope list, and every product decision is recorded as an ADR in
+[09](09-decisions-and-open-questions.md). Five founder dependencies remain open (09, questions 1-4 and 10);
+none of them block building, all of them block launch.
 
 UrbanPetly (urbanpetly.com) is an aggregator for pet services in Delhi NCR.
 Pet parents find, compare and contact providers; providers get a listing and leads.
