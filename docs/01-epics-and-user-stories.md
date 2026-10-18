@@ -469,6 +469,7 @@ Acceptance criteria
 - Given I write a review, when I submit it, then I must have given a star rating of 1 to 5; a title and body are optional, and up to 3 photos may be attached.
 - Given I submit a review, when it succeeds, then it appears on the provider's profile attributed to my first name and the month of the visit.
 - Given I have already reviewed this provider, when I complete another request with them, then I am not offered a second review; I am offered to update my existing one instead (within the window in E5-S5).
+- Given I deleted my review for this provider, when I complete another request with them, then I am told I have already used my review for this provider and no new review is offered (ADR-031).
 - Given a request that is pending, accepted, declined, expired or cancelled, when I open it, then no review option is offered.
 - Given someone else's completed request, when I try to review against it, then the attempt is refused.
 - Given my review body contains contact details such as a phone number or email address, when I submit, then it is held for moderation rather than published immediately.
@@ -524,6 +525,8 @@ Acceptance criteria
 - Given a review I posted less than 7 days ago, when I open it, then I am offered "Edit" and "Delete", and I can see how long I have left to change it.
 - Given I edit my review within the window, when I save, then the new rating, title, body and photos replace the old ones on the provider's profile, the average rating and star breakdown are recalculated, and the review is marked as edited.
 - Given I delete my review within the window, when I confirm, then it disappears from the provider's profile and the average rating and review count no longer include it.
+- Given I delete my review within the window, when the deletion succeeds, then my one review for that provider is spent: no new review is offered for that provider or for the completed request it came from, then or later (ADR-031).
+- Given I choose "Delete", when I am asked to confirm, then I am told the review is gone for good and that I will not be able to write another one for this provider, and "Edit" is offered as the alternative.
 - Given a review I posted more than 7 days ago, when I open it, then no edit or delete action is offered and I am told the window has closed.
 - Given I complete another request with a provider I have already reviewed, when the earlier review is still inside its 7-day window, then I am offered to update it (E5-S1); when the window has closed, then I am told my existing review stands and no second review is created.
 - Given my edited review contains contact details, when I save it, then it is held for moderation exactly as a new review would be (E5-S1) and the previous version stays public meanwhile.
@@ -914,6 +917,7 @@ Acceptance criteria
 - Given a prerendered page, when it loads on a throttled mobile connection, then it meets the Core Web Vitals budgets in 06-nfr.md.
 - Given a new provider is published, when the next scheduled refresh runs, then it appears on the relevant prerendered pages without a manual deploy.
 - Given a city or category that does not exist, when it is requested, then a proper "not found" response is returned, not an empty page that looks like a result.
+- Given a locality that does not exist, or a locality that is not part of the city in the address, when the page is requested, then a proper "not found" response is returned - the zero-provider empty state above is only ever for a real locality of that city that has no supply yet, so "we have nothing here" and "there is no such place" are never the same response.
 
 Out of scope
 - Prerendering every provider profile (E9-S2 covers the approach for those).

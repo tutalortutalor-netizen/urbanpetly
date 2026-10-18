@@ -32,6 +32,7 @@ Status values: **Accepted** (decided, build to it), **Proposed** (the Product Ow
 | ADR-028 | End of the appointment window, IST: morning 12:00, afternoon 17:00, evening 21:00, a specific time = that time + 2 hours | 2026-10-18 | Accepted |
 | ADR-029 | Thin-page rule, restated. The 3-published-provider threshold for prerendering and sitemap inclusion stands. Below it a locality x category page serves its own title, meta description and a canonical pointing at the city x category page, is excluded from the sitemap, and is **not** marked "do not index". With **zero** published providers it is still a working page and shows the E2-S1 empty state rather than nothing | 2026-10-18 | Accepted |
 | ADR-030 | A CSV import batch is reversible in one click for the listings it **created** (unpublished to draft, never hard-deleted). Listings it **updated** are restored by hand from stored before-values | 2026-10-18 | Accepted |
+| ADR-031 | Deleting a review inside the 7-day window **spends** the customer's one review for that provider. The review stops being public and stops counting towards the average and the review count, but the customer gets no new review for that provider or that request. The delete confirmation says so and offers "Edit" instead | 2026-10-18 | Accepted |
 
 ### Notes on the newer ADRs
 
@@ -58,6 +59,12 @@ Photos are split rather than simply gated. Adding one puts imagery we have never
 The empty case had to be named explicitly, because at launch most of those thousand locality pages have **no** providers at all, and dropping "do not index" removed the thing that used to keep them out of the index. A page that answers 200 with nothing on it is exactly the soft-404 that 06-nfr.md forbids, and relying on the canonical to tidy it up is a hope, not a criterion. So a zero-provider locality x category page carries the same empty state E2-S1 already defines one level up - the other categories here, the same category nearby - which is real content, genuinely useful to whoever landed there, and testable. A redirect to the city page was the alternative; it was rejected because it throws away a shareable, bookmarkable address the moment our first provider in that locality signs up.
 
 **ADR-030 (import reversal).** A thousand-row import that goes wrong is the single most damaging action an admin can take, and until now nothing in the spec said how to take it back. Hard deletion is not an option: by the time a bad import is noticed a customer may already have enquired with one of those listings, and deleting the business would delete their enquiry with it. Unpublishing to draft removes the listing from the public directory, which is the actual harm, while keeping every record. Updates are deliberately **not** rolled back automatically - an updated listing may have been corrected by hand or claimed by its owner in between, and blindly restoring it would undo real work. Showing the admin the before-values and letting them choose is slower and right.
+
+**ADR-031 (deleting a review).** E5-S5 offers "Delete" for 7 days and settles the case where the window has closed, but not whether a deletion inside the window frees the customer's one-review-per-provider slot (ADR-013). It does not. Inside the window the customer already has "Edit", which changes the rating, the title, the body and the photos and recalculates the average - everything a delete-and-rewrite would achieve, except that an edit is marked as edited. The only thing delete-and-repost adds is a way to re-rate a provider with the edit marker stripped off, which is precisely the manipulation the one-review rule exists to prevent. Keeping the slot spent also keeps a reported review's moderation record intact (E5-S4, E8-S3), which a true deletion would destroy.
+
+The cost is a customer who deletes in haste and then cannot speak at all, so the confirmation has to say plainly that the review is gone for good and point at "Edit" as the thing they probably want. That warning is a criterion, not copy polish: without it the rule is a trap. The customer's visible outcome is still a deletion - gone from the profile, out of the average and the count, no longer attributed to them; whether the slot is held by a soft-deleted row or by some other record is the Tech Lead's call (gap T8).
+
+**Zero-provider pages versus pages that do not exist (ADR-029).** ADR-029 now covers a real locality of a real city with no supply yet: 200, the E2-S1 empty state, canonical to the city x category page. It must not be stretched to cover an address that names a locality we do not have, or a locality belonging to a different city - those are still "not found", exactly as a non-existent city or category already was. The two cases look similar from the outside and are opposite in meaning: one says "nothing here yet", the other says "no such place". Collapsing them into a 200 would manufacture the soft-404 ADR-029 is trying to avoid, on an unbounded set of invented addresses rather than a known thousand.
 
 ## ADR numbering (governance)
 
@@ -106,6 +113,13 @@ Resolved in the SAM-45 follow-up pass (raised in the SAM-40 Tech Lead review of 
 | 18 | ADR-029 defined the below-threshold locality page for 1 and 2 providers but not for **0**, the majority case at launch - a 200 with no content and no "do not index" is the soft-404 06 forbids | 01 E9-S1 vs 06 SEO | Zero-provider criteria added to E9-S1: the E2-S1 empty state, canonical to the city page, still out of the sitemap (ADR-029) |
 | 19 | "At most one pending **field** change" read as one field, where E8-S2's "changes highlighted" implies a set - load-bearing for gap T1 | 01 E7 shared rules | Reworded to one pending **set** of gated field changes, replaced wholesale on re-save; noted on T1 |
 
+Resolved in the SAM-50 pass (raised by the Tech Lead while merging SAM-45):
+
+| # | Issue | Where | Resolution |
+|---|---|---|---|
+| 20 | E5-S5 offers "Delete" inside the 7-day window but never said whether the customer's one-review-per-provider slot (ADR-013, `UNIQUE(provider_id, customer_id)`) is freed by it, so the constraint could not be built either way | 01 E5-S5, E5-S1 vs 03 reviews | The slot is spent; the confirmation warns and offers "Edit" instead. ADR-031, gap T8 |
+| 21 | E9-S1's only "not found" criterion covered a city or category that does not exist, so a locality that does not exist - or belongs to another city - fell into the same branch as a real locality with no supply (row 18) | 01 E9-S1 | Explicit criterion: a non-existent or wrong-city locality is "not found"; the zero-provider empty state is only for a real locality of that city |
+
 Open for the Project Manager (sequencing, not product):
 
 | # | Issue | Where |
@@ -125,6 +139,7 @@ Open for the Tech Lead (technical, not product):
 | T5 | Nothing records which admin import produced a listing, so a bad import cannot be reversed (E8-S6). **Unblocked:** ADR-030 defines what reversal means - created listings go back to draft in one click, updated listings keep a before-image that an admin restores by hand - so the batch record needs to distinguish created from updated rows and hold the before-values | 03 | Tech Lead |
 | T6 | The customer needs an endpoint to accept a proposed time and to mark a request completed (E4-S3, E4-S7) | 04 customer routes | Tech Lead |
 | T7 | Review moderation needs a route to find any review, not only reported ones (E8-S3) | 04 admin routes | Tech Lead |
+| T8 | `reviews` has no deleted state, but ADR-031 requires a deleted review to stop being public and stop counting while still holding the customer's `UNIQUE(provider_id, customer_id)` and `request_id` slot, and to keep enough of a record for a report already raised against it (E5-S4, E8-S3) | 03 `reviews`, `review_reports` | Tech Lead |
 
 ## Open questions
 Each question below has the Product Owner's recommendation so that work is never blocked. Where a question is marked **blocking**, a story cannot be finished without the answer.
