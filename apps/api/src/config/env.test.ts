@@ -78,6 +78,60 @@ describe('parseEnv', () => {
     expect(env.CORS_ORIGINS).toEqual(['https://urbanpetly.com']);
   });
 
+  it('treats a blank value as unset, so a copied .env.example boots', () => {
+    // The shape `cp .env.example .env` produces: every placeholder is `KEY=`,
+    // which Node reads as '' rather than leaving the variable out.
+    const env = parseEnv({
+      NODE_ENV: 'development',
+      PORT: '3000',
+      JWT_ACCESS_SECRET: '',
+      JWT_REFRESH_SECRET: '',
+      OTP_API_URL: '',
+      OTP_API_KEY: '',
+      S3_ENDPOINT: '',
+      S3_REGION: '',
+      S3_BUCKET: '',
+      S3_ACCESS_KEY: '',
+      S3_SECRET_KEY: '',
+      MEDIA_PUBLIC_URL: '',
+      SMTP_URL: '',
+      ADMIN_PHONE_ALLOWLIST: '',
+      SENTRY_DSN: '',
+    });
+
+    expect(env.JWT_ACCESS_SECRET).toBeUndefined();
+    expect(env.S3_ENDPOINT).toBeUndefined();
+    expect(env.ADMIN_PHONE_ALLOWLIST).toEqual([]);
+  });
+
+  it('falls back to the default when a variable with a default is blank', () => {
+    const env = parseEnv({ PORT: '', LOG_LEVEL: '', CORS_ORIGINS: '' });
+
+    expect(env.PORT).toBe(3000);
+    expect(env.LOG_LEVEL).toBe('info');
+    expect(env.CORS_ORIGINS).toEqual([
+      'http://localhost:5173',
+      'http://localhost:5174',
+      'http://localhost:5175',
+    ]);
+  });
+
+  it('still rejects blank secrets in production', () => {
+    const run = () =>
+      parseEnv({
+        NODE_ENV: 'production',
+        OTP_PROVIDER: 'http',
+        OTP_API_URL: 'https://otp.example.com/send',
+        OTP_API_KEY: 'key',
+        DATABASE_URL: 'mysql://user:pw@db:3306/urbanpetly',
+        JWT_ACCESS_SECRET: '',
+        JWT_REFRESH_SECRET: '',
+      });
+
+    expect(run).toThrow(/JWT_ACCESS_SECRET is required when NODE_ENV=production/);
+    expect(run).toThrow(/JWT_REFRESH_SECRET is required when NODE_ENV=production/);
+  });
+
   it('reports every invalid variable in one error', () => {
     const error = (() => {
       try {

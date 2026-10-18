@@ -77,9 +77,19 @@ export const envSchema = z
 
 export type Env = z.infer<typeof envSchema>;
 
+/**
+ * A blank line in `.env` (`KEY=`) means "not set", not "set to an empty string".
+ *
+ * Node's `--env-file` reads a bare `KEY=` as `''`, which `.optional()` rejects
+ * and `.default()` never fills in - so copying `.env.example` verbatim would
+ * fail on every commented-out placeholder.
+ */
+const withoutBlanks = (source: NodeJS.ProcessEnv): NodeJS.ProcessEnv =>
+  Object.fromEntries(Object.entries(source).filter(([, value]) => value !== ''));
+
 /** Parse an environment bag, throwing a readable error listing every bad variable. */
 export function parseEnv(source: NodeJS.ProcessEnv = process.env): Env {
-  const result = envSchema.safeParse(source);
+  const result = envSchema.safeParse(withoutBlanks(source));
 
   if (!result.success) {
     const details = result.error.issues

@@ -45,6 +45,10 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      # No-op in workspaces that do not define the script; the design system does.
+      - name: Token and contrast checks
+        run: pnpm -r run check:tokens
+
       - name: Test
         run: pnpm test
 

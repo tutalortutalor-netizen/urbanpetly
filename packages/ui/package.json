@@ -24,13 +24,7 @@
   },
   "peerDependencies": {
     "react": "catalog:",
-    "react-dom": "catalog:",
-    "react-router": "catalog:"
-  },
-  "peerDependenciesMeta": {
-    "react-router": {
-      "optional": true
-    }
+    "react-dom": "catalog:"
   },
   "devDependencies": {
     "@urbanpetly/config": "workspace:*",
