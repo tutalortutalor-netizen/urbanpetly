@@ -421,7 +421,7 @@ Acceptance criteria
 - Given a request the customer cancelled, or that the provider already answered, when the 72 hours pass, then nothing happens to it and no expiry email is sent.
 - Given an expired request, when either party opens it, then the timeline shows that it expired and when, and no accept, decline or cancel action is offered.
 - Given an expired request, when the customer opens it, then no review option is offered (only completed requests unlock a review).
-- Given the job that expires requests does not run for several hours, when it next runs, then every request that should have expired expires, each with one email and no duplicates.
+- Given the job that expires requests does not run for several hours, when it next runs, then every request that should have expired expires, each with one email and no duplicates (the runner this relies on is E12-S8).
 
 Out of scope
 - Nudging the provider before the window closes (P2).
@@ -436,7 +436,7 @@ Rationale: in the original spec only the provider could mark a request complete,
 Acceptance criteria
 - Given an accepted request whose end of the appointment window (see "Shared rules for E4") has passed, when either the customer or the provider marks it as completed, then its status becomes "Completed" and both parties see who marked it and when.
 - Given an accepted request whose end of the appointment window has not yet passed, when either party tries to mark it completed, then the action is not offered.
-- Given an accepted request that neither party has acted on, when 48 hours have passed since the end of the appointment window, then it is automatically marked completed, and the timeline records that it was completed automatically.
+- Given an accepted request that neither party has acted on, when 48 hours have passed since the end of the appointment window, then it is automatically marked completed, and the timeline records that it was completed automatically (the sweep runs on the runner in E12-S8; a late sweep still completes every request that is due, once each).
 - Given an accepted request for the morning window on a given date, when the clock passes 12:00 IST on that date, then the "Mark completed" action becomes available to both parties and auto-completion is due at 12:00 IST two days later.
 - Given a request is completed, when the customer opens it, then they are invited to leave a review (E5-S1).
 - Given a request is completed, when either party tries to cancel it, then the action is refused.
@@ -945,7 +945,7 @@ Acceptance criteria
 - Given a sitemap entry, when I inspect it, then it has a last-modified date that reflects when that page's content last changed.
 - Given more than 50,000 URLs, when the sitemap is produced, then it is split into a sitemap index with child sitemaps.
 - Given a provider is unpublished, suspended or deleted, when the sitemap is next refreshed, then that URL is gone from it.
-- Given the sitemap, when the scheduled refresh runs each night, then it reflects the state of the catalogue at that time without a deploy.
+- Given the sitemap, when the scheduled refresh runs each night, then it reflects the state of the catalogue at that time without a deploy (the refresh is scheduled by E12-S8; a night missed because the service was down is caught up on the next start, not skipped).
 - Given `/robots.txt` is requested, then it allows the public site, disallows the account, provider and admin areas, and points at the sitemap.
 - Given the staging environment, when `/robots.txt` is requested, then it disallows everything.
 - Given the admin app, when any of its pages is fetched, then it tells search engines not to index it (06-nfr.md).
@@ -1027,7 +1027,7 @@ Out of scope
 |---|---|---|
 | E11-S1 | Upload images; server validates type and size and produces web-sized versions | P0 |
 | E11-S2 | Images are served fast and cached | P0 |
-| E11-S3 | Orphaned uploads cleaned by a scheduled job | P1 |
+| E11-S3 | Orphaned uploads cleaned by a scheduled job (runs on E12-S8) | P1 |
 
 ### E11-S1 - Image upload and processing
 As a provider or pet parent, I want to add photos easily from my phone, so that my listing or review looks real.
@@ -1077,6 +1077,7 @@ Out of scope
 | E12-S5 | Automated daily backups to off-server storage; restore tested | P0 |
 | E12-S6 | Privacy-friendly analytics with consent | P1 |
 | E12-S7 | Database seed data for dev and tests | P0 |
+| E12-S8 | Scheduled jobs run on time, once, and catch up after downtime | P0 (new, ADR-031) |
 
 E12 is engineering enablement rather than user-facing product. The Product Owner sets the outcome; the Tech Lead owns every technical choice inside it. Criteria below are written from the point of view of the team member who depends on the outcome.
 
@@ -1184,6 +1185,30 @@ Acceptance criteria
 Out of scope
 - Production data anonymisation and copy-down.
 - Performance-sized data sets for load testing (QA owns these, 07-test-plan.md).
+
+### E12-S8 - Scheduled jobs run on time, once, and catch up after downtime
+As a developer building work that has to happen without anyone pressing a button, I want one place to register a job that already handles timing, catch-up, overlap and failure, so that each job only contains its own work and all of them behave the same way.
+
+New and P0 (ADR-031): four stories promise something that happens on a clock - E4-S6 (72-hour expiry), E4-S7 (48-hour auto-completion), E9-S3 (nightly sitemap refresh) and E11-S3 (orphaned-upload cleanup) - and none of them builds the thing that makes it happen. Three of the four are P0. E4-S6's last criterion ("the job does not run for several hours... every request that should have expired expires, each with one email and no duplicates") is runner behaviour rather than expiry behaviour; without this story it is absorbed silently into whichever of the four is picked up first, and the other three inherit whatever that developer happened to build.
+
+Acceptance criteria
+- Given the API starts, when the scheduler initialises, then every registered job is recorded at startup with its name and its schedule, and a job registered without a name or without a schedule stops the API from starting rather than never running unnoticed.
+- Given a job's scheduled time passes while the service is down, when the service next starts, then the job runs once for the window it missed rather than once per missed tick, and that catch-up run is distinguishable from a normal one.
+- Given a run of a job is still in progress, when that job's next scheduled time arrives, then a second run does not start and the skipped tick is recorded with the job name.
+- Given two instances of the API are running at the same time (a deploy overlap, a restart that has not finished draining), when a job's scheduled time arrives, then its work happens once, not twice.
+- Given a job fails partway through, when it fails, then the failure is recorded with the job name and what it was working on (06-nfr.md log rules still apply), every other job keeps running, and the failed job's next scheduled run still happens.
+- Given a job whose work has an effect outside the system - sending an email, writing a file - when it runs again over the same rows after a failure, a catch-up or a manual trigger, then that effect happens at most once per row, and rows it already finished are not reprocessed.
+- Given a developer or tester needs to exercise a job, when they trigger it by hand against the current data, then it runs immediately, in full, without waiting for its schedule or changing the clock.
+- Given a job has not completed successfully for twice its scheduled interval, when that is detected in production, then an alert reaches the team and the last run time and outcome of every job can be seen without a deploy (E12-S4).
+
+Out of scope
+- The mechanism: in-process timer, system timer, external scheduler or queue, and whether jobs share the API process (Tech Lead, spike 5 in 09-decisions-and-open-questions.md).
+- The jobs themselves - request expiry (E4-S6), auto-completion (E4-S7), nightly sitemap refresh (E9-S3), orphaned-upload cleanup (E11-S3). This story delivers the runner plus at least one job proving the criteria above.
+- Work triggered by a user action rather than a clock, such as image processing (E11-S1), and retrying a failed email (E10-S1).
+- A worker pool or queue for high-volume asynchronous work.
+- An admin screen for inspecting or re-running jobs (support reads the operational record in v1).
+
+Sequencing: the mechanism depends on spike 5 (Tech Lead, Phase 0), so this is not estimated until the spike lands. The first consumer, E9-S3, is in Phase 1, so this story has to land with or before it.
 
 ---
 

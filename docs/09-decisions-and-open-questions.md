@@ -32,6 +32,7 @@ Status values: **Accepted** (decided, build to it), **Proposed** (the Product Ow
 | ADR-028 | End of the appointment window, IST: morning 12:00, afternoon 17:00, evening 21:00, a specific time = that time + 2 hours | 2026-10-18 | Accepted |
 | ADR-029 | Thin-page rule, restated. The 3-published-provider threshold for prerendering and sitemap inclusion stands. Below it a locality x category page serves its own title, meta description and a canonical pointing at the city x category page, is excluded from the sitemap, and is **not** marked "do not index". With **zero** published providers it is still a working page and shows the E2-S1 empty state rather than nothing | 2026-10-18 | Accepted |
 | ADR-030 | A CSV import batch is reversible in one click for the listings it **created** (unpublished to draft, never hard-deleted). Listings it **updated** are restored by hand from stored before-values | 2026-10-18 | Accepted |
+| ADR-031 | The scheduled-job runner is its own P0 story (E12-S8), not a side effect of the first job that needs it. Catch-up after downtime, no overlapping runs, one run across instances, failure isolation and at-most-once external effects are the runner's criteria, not each job's | 2026-10-18 | Accepted |
 
 ### Notes on the newer ADRs
 
@@ -59,6 +60,8 @@ The empty case had to be named explicitly, because at launch most of those thous
 
 **ADR-030 (import reversal).** A thousand-row import that goes wrong is the single most damaging action an admin can take, and until now nothing in the spec said how to take it back. Hard deletion is not an option: by the time a bad import is noticed a customer may already have enquired with one of those listings, and deleting the business would delete their enquiry with it. Unpublishing to draft removes the listing from the public directory, which is the actual harm, while keeping every record. Updates are deliberately **not** rolled back automatically - an updated listing may have been corrected by hand or claimed by its owner in between, and blindly restoring it would undo real work. Showing the admin the before-values and letting them choose is slower and right.
 
+**ADR-031 (the runner is a story).** The tempting answer was to let whichever story needs a job first build "a little scheduler" and have the next three reuse it. That is how the hard parts get decided by accident: the nightly sitemap refresh is the most forgiving of the four jobs - a missed night is a stale sitemap - so a runner built for it would plausibly skip a missed window, run twice if two instances overlapped, and stop the rest of the jobs when one threw. E4-S6 then inherits that and sends a customer two "nobody replied" emails, or none. The behaviours that are expensive to retrofit - catch-up, no overlap, one run across instances, failure isolation, at-most-once external effects - are the same for all four jobs, so they are specified once, tested once, and each job stays nothing but its own rules. It is deliberately P0 even though one of its four consumers is P1: three are P0, and the runner is not something a P1 story can carry for them. The mechanism stays with the Tech Lead (spike 5); only the behaviour is fixed here.
+
 ## ADR numbering (governance)
 
 Agreed with the Tech Lead (SAM-45, in answer to M5):
@@ -74,7 +77,7 @@ Agreed with the Tech Lead (SAM-45, in answer to M5):
 2. Object store product (MinIO status check, Garage, SeaweedFS) and backup approach.
 3. Map tiles and geocoding provider with acceptable free tier and terms for commercial use in India.
 4. Session design details (cookie domains across `provider.`/`admin.` subdomains).
-5. **New:** scheduled-job design for the jobs E4-S6, E4-S7, E9-S3 and E11-S3 depend on (request expiry, auto-completion, nightly sitemap, orphaned-upload cleanup) on a single-instance deployment.
+5. **New:** scheduled-job design for the jobs E4-S6, E4-S7, E9-S3 and E11-S3 depend on (request expiry, auto-completion, nightly sitemap, orphaned-upload cleanup) on a single-instance deployment. The spike settles the mechanism; the behaviour it has to produce is now a story, **E12-S8** (ADR-031), which is not estimated until the spike lands.
 
 ## Spec gaps and conflicts found while finalising v1.0
 Resolved in this pass:
@@ -105,6 +108,12 @@ Resolved in the SAM-45 follow-up pass (raised in the SAM-40 Tech Lead review of 
 | 17 | E8-S6's P0 justification cited a Phase 1 exit criterion that E12-S7 seeds and E8-S5 hand-entry already satisfy | 01 E8-S6 vs 08 Phase 1 | Rewritten to rest on the 500-listing target in 00 §7, which hand-entry cannot reach |
 | 18 | ADR-029 defined the below-threshold locality page for 1 and 2 providers but not for **0**, the majority case at launch - a 200 with no content and no "do not index" is the soft-404 06 forbids | 01 E9-S1 vs 06 SEO | Zero-provider criteria added to E9-S1: the E2-S1 empty state, canonical to the city page, still out of the sitemap (ADR-029) |
 | 19 | "At most one pending **field** change" read as one field, where E8-S2's "changes highlighted" implies a set - load-bearing for gap T1 | 01 E7 shared rules | Reworded to one pending **set** of gated field changes, replaced wholesale on re-save; noted on T1 |
+
+Resolved in the SAM-54 pass (raised by the Project Manager while sequencing ADR-027):
+
+| # | Issue | Where | Resolution |
+|---|---|---|---|
+| 20 | Four stories depend on something running jobs on a schedule - E4-S6 (72h expiry), E4-S7 (48h auto-completion), E9-S3 (nightly sitemap), E11-S3 (upload cleanup), three of them P0 - and no story built it. 02 names the folder and 03 names a lock, but nothing said what invokes a job, what happens to a window missed while the service was down, or who owns the "no duplicate emails" criterion already written into E4-S6 | 01 E4-S6, E4-S7, E9-S3, E11-S3 vs 02, 03 | New story E12-S8 at P0, ADR-031; spike 5 still settles the mechanism |
 
 Open for the Project Manager (sequencing, not product):
 
