@@ -5,7 +5,7 @@ Owner: UI/UX Designer.
 > ## Decision: **Option B — "Indigo Care"**
 >
 > Chosen by the founder on **2026-10-18** (Paperclip issue SAM-7), with the wordmark
-> **capitalised: `UrbanPetly`**. Shipped in `packages/ui/src/styles/tokens.css`; the Option A
+> **capitalised: `UrbanPetly`**. Shipped in `packages/ui/src/theme.css`; the Option A
 > preview block has been removed. Option A is kept below as the record of what was considered
 > and why — do not reintroduce its values without a new decision on an issue.
 >
@@ -96,7 +96,7 @@ Slightly larger radii (`lg` 16, `xl` 24) and cooler, tighter shadows.
 
 | Step | State |
 |---|---|
-| Swap the primitive values in `packages/ui/src/styles/tokens.css`, delete the preview block, rerun `check-contrast.mjs` | **Done** — all 26 pairs pass, see design-system.md §2.3 |
+| Swap the primitive values in `packages/ui/src/theme.css`, delete the preview block, rerun `check-contrast.mjs` | **Done** — all 49 pairs pass, see design-system.md §2.3 |
 | Update design-system.md, the screen specs and the prototype to the new palette, type and radii | **Done** |
 | Logo as SVG (`packages/ui/src/assets/`) in three lockups — full, compact, mark-only + favicon set | **To do** — follow-up issue; needs the scaffold (E12-S1) for a place to import from |
 | Self-host *Outfit* and *Inter* woff2 subsets per the `06-nfr` performance budget | **To do** — with the first components |

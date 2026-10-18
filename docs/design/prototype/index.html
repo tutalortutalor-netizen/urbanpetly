@@ -1,9 +1,9 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>UrbanPetly — core flow 1 prototype</title>
+    <title>UrbanPetly â€” core flow 1 prototype</title>
     <!--
       Clickable prototype for core flow 1 (docs/design/core-flows.md):
       Home -> Listing -> Profile -> Request 1-3 -> OTP -> Confirmation.
@@ -12,10 +12,16 @@
       motion and the reduced-motion rule cannot drift from packages/ui. Brand is
       "Indigo Care" (founder's decision, 2026-10-18).
 
+      theme.css is Tailwind v4, and a browser ignores its @theme block, so the
+      semantic layer is also emitted as plain CSS into tokens-resolved.css by
+      `pnpm --filter @urbanpetly/ui check:tokens -- --write`. The guard fails if
+      that file goes stale, so this page still cannot drift.
+
       This is a design artefact, not production code: no build step, no framework,
       content is hard-coded. The React implementation follows the screen specs.
     -->
-    <link rel="stylesheet" href="../../../packages/ui/src/styles/tokens.css" />
+    <link rel="stylesheet" href="../../../packages/ui/src/theme.css" />
+    <link rel="stylesheet" href="tokens-resolved.css" />
     <style>
       *,
       *::before,
@@ -26,18 +32,18 @@
         background: var(--color-surface-sunken);
         font-family: var(--font-body);
         font-size: var(--text-body);
-        line-height: var(--text-body-lh);
+        line-height: var(--text-body--line-height);
         color: var(--color-fg);
         -webkit-font-smoothing: antialiased;
       }
 
       h1, h2, h3 { font-family: var(--font-heading); margin: 0; }
-      h1 { font-size: var(--text-h1); line-height: var(--text-h1-lh); font-weight: 700; }
-      h2 { font-size: var(--text-h2); line-height: var(--text-h2-lh); font-weight: 600; }
-      h3 { font-size: var(--text-h3); line-height: var(--text-h3-lh); font-weight: 600; }
+      h1 { font-size: var(--text-h1); line-height: var(--text-h1--line-height); font-weight: 700; }
+      h2 { font-size: var(--text-h2); line-height: var(--text-h2--line-height); font-weight: 600; }
+      h3 { font-size: var(--text-h3); line-height: var(--text-h3--line-height); font-weight: 600; }
       p { margin: 0; }
 
-      /* Phone frame — the prototype is designed at the 360px base width. */
+      /* Phone frame â€” the prototype is designed at the 360px base width. */
       .frame {
         width: 100%;
         max-width: 390px;
@@ -50,7 +56,7 @@
         position: relative;
       }
       @media (min-width: 768px) {
-        body { padding: var(--space-6) 0; }
+        body { padding: var(--spacing-6) 0; }
         .frame { min-height: 780px; border-radius: var(--radius-xl); overflow: hidden; }
       }
 
@@ -61,24 +67,24 @@
       .bar {
         display: flex;
         align-items: center;
-        gap: var(--space-3);
+        gap: var(--spacing-3);
         min-height: 56px;
-        padding: var(--space-2) var(--space-4);
+        padding: var(--spacing-2) var(--spacing-4);
         background: var(--color-surface);
         border-bottom: 1px solid var(--color-border);
         position: sticky;
         top: 0;
         z-index: var(--z-header);
       }
-      .bar h1, .bar h2 { font-size: var(--text-h3); line-height: var(--text-h3-lh); }
+      .bar h1, .bar h2 { font-size: var(--text-h3); line-height: var(--text-h3--line-height); }
       .brand { font-family: var(--font-heading); font-weight: 700; letter-spacing: -0.01em; }
       .brand span { color: var(--color-primary); }
 
-      .body { padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-6); flex: 1; }
-      .stack { display: flex; flex-direction: column; gap: var(--space-3); }
-      .row { display: flex; align-items: center; gap: var(--space-2); }
-      .spread { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
-      .muted { color: var(--color-fg-muted); font-size: var(--text-body-sm); line-height: var(--text-body-sm-lh); }
+      .body { padding: var(--spacing-4); display: flex; flex-direction: column; gap: var(--spacing-6); flex: 1; }
+      .stack { display: flex; flex-direction: column; gap: var(--spacing-3); }
+      .row { display: flex; align-items: center; gap: var(--spacing-2); }
+      .spread { display: flex; align-items: center; justify-content: space-between; gap: var(--spacing-3); }
+      .muted { color: var(--color-fg-muted); font-size: var(--text-body-sm); line-height: var(--text-body-sm--line-height); }
       .tabular { font-variant-numeric: tabular-nums; }
       .price { font-weight: 600; font-variant-numeric: tabular-nums; }
 
@@ -88,8 +94,8 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: var(--space-2);
-        padding: 0 var(--space-4);
+        gap: var(--spacing-2);
+        padding: 0 var(--spacing-4);
         border-radius: var(--radius-md);
         border: 1px solid transparent;
         font: inherit;
@@ -122,11 +128,11 @@
       }
       .icon-btn:hover { background: var(--color-surface-sunken); }
 
-      .field { display: flex; flex-direction: column; gap: var(--space-1); }
+      .field { display: flex; flex-direction: column; gap: var(--spacing-1); }
       .field > label { font-size: var(--text-body-sm); font-weight: 600; }
       .input {
         min-height: var(--target-min);
-        padding: 0 var(--space-3);
+        padding: 0 var(--spacing-3);
         border: 1px solid var(--color-border-strong);
         border-radius: var(--radius-md);
         background: var(--color-surface);
@@ -136,18 +142,18 @@
       .input::placeholder { color: var(--color-fg-subtle); }
       .input:focus-visible { border-color: var(--color-primary); }
       .input--lg { min-height: 52px; font-size: var(--text-body-lg); }
-      textarea.input { padding: var(--space-3); min-height: 88px; resize: vertical; }
+      textarea.input { padding: var(--spacing-3); min-height: 88px; resize: vertical; }
 
       /* --- chips and badges ---------------------------------------------- */
-      .chips { display: flex; gap: var(--space-2); overflow-x: auto; padding-bottom: var(--space-1); scrollbar-width: none; }
+      .chips { display: flex; gap: var(--spacing-2); overflow-x: auto; padding-bottom: var(--spacing-1); scrollbar-width: none; }
       .chips::-webkit-scrollbar { display: none; }
       .chips--wrap { flex-wrap: wrap; overflow: visible; }
       .chip {
         min-height: 36px;
         display: inline-flex;
         align-items: center;
-        gap: var(--space-1);
-        padding: 0 var(--space-3);
+        gap: var(--spacing-1);
+        padding: 0 var(--spacing-3);
         white-space: nowrap;
         border: 1px solid var(--color-border-strong);
         border-radius: var(--radius-pill);
@@ -171,10 +177,10 @@
         display: inline-flex;
         align-items: center;
         gap: 4px;
-        padding: 2px var(--space-2);
+        padding: 2px var(--spacing-2);
         border-radius: var(--radius-sm);
         font-size: var(--text-caption);
-        line-height: var(--text-caption-lh);
+        line-height: var(--text-caption--line-height);
         font-weight: 500;
         min-height: 24px;
       }
@@ -190,10 +196,10 @@
         border: 1px solid var(--color-border);
         border-radius: var(--radius-lg);
         box-shadow: var(--shadow-xs);
-        padding: var(--space-4);
+        padding: var(--spacing-4);
         display: flex;
         flex-direction: column;
-        gap: var(--space-2);
+        gap: var(--spacing-2);
         text-align: left;
         font: inherit;
         color: inherit;
@@ -208,21 +214,21 @@
         background: linear-gradient(135deg, var(--color-primary-subtle), var(--color-accent-subtle));
         display: flex;
         align-items: flex-end;
-        padding: var(--space-2);
-        gap: var(--space-1);
+        padding: var(--spacing-2);
+        gap: var(--spacing-1);
         font-size: 2rem;
       }
       .photo--hero { aspect-ratio: 3 / 2; border-radius: 0; }
 
-      .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); }
+      .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-3); }
       .tile {
         min-height: 96px;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: var(--space-1);
-        padding: var(--space-2);
+        gap: var(--spacing-1);
+        padding: var(--spacing-2);
         background: var(--color-surface);
         border: 1px solid var(--color-border);
         border-radius: var(--radius-lg);
@@ -235,13 +241,13 @@
       .tile:hover { box-shadow: var(--shadow-sm); }
       .tile span:first-child { font-size: 1.75rem; }
 
-      .rail { display: flex; gap: var(--space-3); overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+      .rail { display: flex; gap: var(--spacing-3); overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
       .rail::-webkit-scrollbar { display: none; }
       .rail > * { flex: 0 0 82%; scroll-snap-align: start; }
 
       /* --- flow furniture -------------------------------------------------- */
-      .stepper { padding: var(--space-2) var(--space-4) 0; background: var(--color-surface); }
-      .stepper p { font-size: var(--text-caption); color: var(--color-fg-muted); margin-bottom: var(--space-1); }
+      .stepper { padding: var(--spacing-2) var(--spacing-4) 0; background: var(--color-surface); }
+      .stepper p { font-size: var(--text-caption); color: var(--color-fg-muted); margin-bottom: var(--spacing-1); }
       .progress { height: 4px; border-radius: var(--radius-pill); background: var(--color-surface-sunken); overflow: hidden; }
       .progress > i { display: block; height: 100%; background: var(--color-primary); transition: width var(--duration-base) var(--ease-standard); }
 
@@ -249,8 +255,8 @@
         position: sticky;
         bottom: 0;
         display: flex;
-        gap: var(--space-3);
-        padding: var(--space-3) var(--space-4) max(var(--space-4), env(safe-area-inset-bottom));
+        gap: var(--spacing-3);
+        padding: var(--spacing-3) var(--spacing-4) max(var(--spacing-4), env(safe-area-inset-bottom));
         background: var(--color-surface);
         border-top: 1px solid var(--color-border);
         z-index: var(--z-sticky);
@@ -258,15 +264,15 @@
       .sticky-actions .btn { flex: 1; }
       .sticky-actions .btn--primary { flex: 2; }
 
-      .panel { padding: var(--space-3); border-radius: var(--radius-md); font-size: var(--text-body-sm); line-height: var(--text-body-sm-lh); }
+      .panel { padding: var(--spacing-3); border-radius: var(--radius-md); font-size: var(--text-body-sm); line-height: var(--text-body-sm--line-height); }
       .panel--info { background: var(--color-primary-subtle); color: var(--color-primary-hover); }
       .panel--accent { background: var(--color-accent-subtle); color: var(--color-accent-strong); }
 
-      .summary { display: flex; flex-direction: column; gap: var(--space-3); }
-      .summary > div { display: flex; justify-content: space-between; gap: var(--space-3); padding-bottom: var(--space-3); border-bottom: 1px solid var(--color-border); }
+      .summary { display: flex; flex-direction: column; gap: var(--spacing-3); }
+      .summary > div { display: flex; justify-content: space-between; gap: var(--spacing-3); padding-bottom: var(--spacing-3); border-bottom: 1px solid var(--color-border); }
       .summary > div:last-child { border-bottom: 0; padding-bottom: 0; }
 
-      .otp { display: flex; gap: var(--space-2); }
+      .otp { display: flex; gap: var(--spacing-2); }
       .otp input {
         width: 48px;
         height: 52px;
@@ -288,7 +294,7 @@
         background: var(--color-surface);
       }
       dialog::backdrop { background: var(--color-overlay); }
-      .sheet { padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-4); }
+      .sheet { padding: var(--spacing-4); display: flex; flex-direction: column; gap: var(--spacing-4); }
 
       .success-mark {
         width: 64px;
@@ -303,23 +309,23 @@
         margin: 0 auto;
       }
 
-      .steps { margin: 0; padding-left: var(--space-5); display: flex; flex-direction: column; gap: var(--space-2); }
+      .steps { margin: 0; padding-left: var(--spacing-5); display: flex; flex-direction: column; gap: var(--spacing-2); }
 
       .skip {
         position: absolute;
-        left: var(--space-4);
-        top: var(--space-2);
+        left: var(--spacing-4);
+        top: var(--spacing-2);
         z-index: var(--z-modal);
         background: var(--color-surface);
-        padding: var(--space-2) var(--space-3);
+        padding: var(--spacing-2) var(--spacing-3);
         border-radius: var(--radius-md);
       }
       .skip:not(:focus) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
       .note {
         max-width: 390px;
-        margin: var(--space-4) auto 0;
-        padding: var(--space-4);
+        margin: var(--spacing-4) auto 0;
+        padding: var(--spacing-4);
         font-size: var(--text-body-sm);
         color: var(--color-fg-muted);
       }
@@ -338,26 +344,26 @@
           <button class="btn btn--ghost" type="button" data-go="login-note">Sign in</button>
         </div>
         <div class="bar" style="min-height: 44px; position: static">
-          <button class="icon-btn" type="button" aria-label="Change location, currently Gurgaon, Sector 56">📍</button>
-          <span class="muted">Gurgaon · Sector 56</span>
+          <button class="icon-btn" type="button" aria-label="Change location, currently Gurgaon, Sector 56">ðŸ“</button>
+          <span class="muted">Gurgaon Â· Sector 56</span>
         </div>
 
         <div class="body" id="content">
           <div class="stack">
-            <h1 id="home-title" style="font-size: var(--text-display); line-height: var(--text-display-lh)">
+            <h1 id="home-title" style="font-size: var(--text-display); line-height: var(--text-display--line-height)">
               Every pet service in Delhi NCR, in one place.
             </h1>
             <label class="sr-only" for="home-search" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Search</label>
-            <input class="input input--lg" id="home-search" type="search" placeholder="Search groomers, vets, boarding…" />
+            <input class="input input--lg" id="home-search" type="search" placeholder="Search groomers, vets, boardingâ€¦" />
           </div>
 
           <div class="tiles">
-            <button class="tile" type="button" data-go="listing"><span>🛁</span><span>Grooming</span></button>
-            <button class="tile" type="button" data-go="listing"><span>🩺</span><span>Vets</span></button>
-            <button class="tile" type="button" data-go="listing"><span>🏠</span><span>Boarding</span></button>
-            <button class="tile" type="button" data-go="listing"><span>🎾</span><span>Training</span></button>
-            <button class="tile" type="button" data-go="listing"><span>🦮</span><span>Walking</span></button>
-            <button class="tile" type="button" data-go="listing"><span>🛍️</span><span>Stores</span></button>
+            <button class="tile" type="button" data-go="listing"><span>ðŸ›</span><span>Grooming</span></button>
+            <button class="tile" type="button" data-go="listing"><span>ðŸ©º</span><span>Vets</span></button>
+            <button class="tile" type="button" data-go="listing"><span>ðŸ </span><span>Boarding</span></button>
+            <button class="tile" type="button" data-go="listing"><span>ðŸŽ¾</span><span>Training</span></button>
+            <button class="tile" type="button" data-go="listing"><span>ðŸ¦®</span><span>Walking</span></button>
+            <button class="tile" type="button" data-go="listing"><span>ðŸ›ï¸</span><span>Stores</span></button>
           </div>
 
           <div class="stack">
@@ -367,16 +373,16 @@
             </div>
             <div class="rail">
               <button class="card" type="button" data-go="profile">
-                <span class="photo">🐩</span>
+                <span class="photo">ðŸ©</span>
                 <h3>Happy Tails Grooming</h3>
-                <span class="muted tabular">★ 4.6 (38) · 1.2 km · Sector 56</span>
-                <span class="row"><span class="price">Starts at ₹800</span><span class="badge badge--home">At home</span></span>
+                <span class="muted tabular">â˜… 4.6 (38) Â· 1.2 km Â· Sector 56</span>
+                <span class="row"><span class="price">Starts at â‚¹800</span><span class="badge badge--home">At home</span></span>
               </button>
               <button class="card" type="button" data-go="profile">
-                <span class="photo">🐕</span>
+                <span class="photo">ðŸ•</span>
                 <h3>Pawfect Spa</h3>
-                <span class="muted tabular">★ 4.4 (21) · 2.0 km · Sector 54</span>
-                <span class="row"><span class="price">Starts at ₹650</span></span>
+                <span class="muted tabular">â˜… 4.4 (21) Â· 2.0 km Â· Sector 54</span>
+                <span class="row"><span class="price">Starts at â‚¹650</span></span>
               </button>
             </div>
           </div>
@@ -386,7 +392,7 @@
             <ol class="steps muted">
               <li>Search your area</li>
               <li>Compare prices and reviews</li>
-              <li>Send a request — no payment needed</li>
+              <li>Send a request â€” no payment needed</li>
             </ol>
           </div>
 
@@ -401,74 +407,74 @@
       <!-- ================= LISTING ================= -->
       <section class="screen" data-screen="listing" aria-labelledby="listing-title">
         <div class="bar">
-          <button class="icon-btn" type="button" aria-label="Back" data-go="home">←</button>
+          <button class="icon-btn" type="button" aria-label="Back" data-go="home">â†</button>
           <h1 id="listing-title">Grooming in Sector 56</h1>
         </div>
 
         <div class="body">
           <div class="chips" role="group" aria-label="Filters">
-            <button class="chip" type="button" data-go="login-note">Filters · 1</button>
+            <button class="chip" type="button" data-go="login-note">Filters Â· 1</button>
             <button class="chip" type="button" aria-pressed="true" data-filter>At home</button>
-            <button class="chip" type="button" aria-pressed="false" data-filter>4★ and up</button>
+            <button class="chip" type="button" aria-pressed="false" data-filter>4â˜… and up</button>
             <button class="chip" type="button" aria-pressed="false" data-filter>Open now</button>
             <button class="chip" type="button" aria-pressed="false" data-filter>Verified</button>
           </div>
 
           <div class="spread">
-            <p class="muted tabular" id="result-count" role="status">24 groomers · within 10 km</p>
+            <p class="muted tabular" id="result-count" role="status">24 groomers Â· within 10 km</p>
             <button class="btn btn--ghost" type="button" data-go="login-note">Sort: Distance</button>
           </div>
 
           <div class="stack">
             <button class="card" type="button" data-go="profile">
-              <span class="photo">🐩<span class="badge badge--verified" style="font-size: var(--text-caption)">Verified</span></span>
+              <span class="photo">ðŸ©<span class="badge badge--verified" style="font-size: var(--text-caption)">Verified</span></span>
               <h3>Happy Tails Grooming</h3>
-              <span class="muted tabular">★ 4.6 (38) · 1.2 km · Sector 56</span>
-              <span class="row"><span class="price">Starts at ₹800</span><span class="badge badge--home">At home</span></span>
-              <span><span class="badge badge--open">● Open now</span></span>
+              <span class="muted tabular">â˜… 4.6 (38) Â· 1.2 km Â· Sector 56</span>
+              <span class="row"><span class="price">Starts at â‚¹800</span><span class="badge badge--home">At home</span></span>
+              <span><span class="badge badge--open">â— Open now</span></span>
             </button>
             <button class="card" type="button" data-go="profile">
-              <span class="photo">🐕</span>
+              <span class="photo">ðŸ•</span>
               <h3>Pawfect Spa</h3>
-              <span class="muted tabular">★ 4.4 (21) · 2.0 km · Sector 54</span>
-              <span class="row"><span class="price">Starts at ₹650</span><span class="badge badge--home">At home</span></span>
+              <span class="muted tabular">â˜… 4.4 (21) Â· 2.0 km Â· Sector 54</span>
+              <span class="row"><span class="price">Starts at â‚¹650</span><span class="badge badge--home">At home</span></span>
             </button>
             <button class="card" type="button" data-go="profile">
-              <span class="photo">🐈</span>
+              <span class="photo">ðŸˆ</span>
               <h3>The Grooming Room</h3>
-              <span class="muted tabular">★ 4.8 (12) · 3.4 km · DLF Phase 4</span>
-              <span class="row"><span class="price">Starts at ₹1,200</span></span>
+              <span class="muted tabular">â˜… 4.8 (12) Â· 3.4 km Â· DLF Phase 4</span>
+              <span class="row"><span class="price">Starts at â‚¹1,200</span></span>
             </button>
           </div>
 
-          <button class="btn btn--secondary btn--block" type="button" data-go="login-note">Load more · Showing 20 of 24</button>
+          <button class="btn btn--secondary btn--block" type="button" data-go="login-note">Load more Â· Showing 20 of 24</button>
         </div>
       </section>
 
       <!-- ================= PROFILE ================= -->
       <section class="screen" data-screen="profile" aria-labelledby="profile-title">
         <div class="bar">
-          <button class="icon-btn" type="button" aria-label="Back" data-go="listing">←</button>
+          <button class="icon-btn" type="button" aria-label="Back" data-go="listing">â†</button>
           <span style="flex: 1"></span>
-          <button class="icon-btn" type="button" aria-label="Share">⤴</button>
-          <button class="icon-btn" type="button" aria-label="Save Happy Tails Grooming" aria-pressed="false" data-fav>♡</button>
+          <button class="icon-btn" type="button" aria-label="Share">â¤´</button>
+          <button class="icon-btn" type="button" aria-label="Save Happy Tails Grooming" aria-pressed="false" data-fav>â™¡</button>
         </div>
 
-        <span class="photo photo--hero">🐩</span>
+        <span class="photo photo--hero">ðŸ©</span>
 
-        <div class="body" style="gap: var(--space-5)">
+        <div class="body" style="gap: var(--spacing-5)">
           <div class="stack">
             <h1 id="profile-title">Happy Tails Grooming</h1>
             <div class="row" style="flex-wrap: wrap">
-              <span class="badge badge--verified">✓ Verified</span>
-              <span class="badge badge--home">🏠 At home</span>
+              <span class="badge badge--verified">âœ“ Verified</span>
+              <span class="badge badge--home">ðŸ  At home</span>
             </div>
             <p aria-label="Rated 4.6 out of 5 from 38 reviews">
-              <span style="color: var(--color-accent)" aria-hidden="true">★★★★☆</span>
+              <span style="color: var(--color-accent)" aria-hidden="true">â˜…â˜…â˜…â˜…â˜†</span>
               <span class="tabular">4.6 (38 reviews)</span>
             </p>
-            <p class="muted tabular">Sector 56, Gurgaon · 1.2 km away</p>
-            <p><span class="badge badge--open">● Open now</span> <span class="muted">Closes 8 pm</span></p>
+            <p class="muted tabular">Sector 56, Gurgaon Â· 1.2 km away</p>
+            <p><span class="badge badge--open">â— Open now</span> <span class="muted">Closes 8 pm</span></p>
           </div>
 
           <div class="stack">
@@ -479,13 +485,13 @@
           <div class="stack">
             <h2>Services and prices</h2>
             <div class="card card--flat">
-              <div class="spread"><h3>Full groom — dogs</h3><span class="price">₹800 – ₹1,500</span></div>
+              <div class="spread"><h3>Full groom â€” dogs</h3><span class="price">â‚¹800 â€“ â‚¹1,500</span></div>
               <p class="muted">90 min</p>
               <div class="row"><span class="badge badge--accent">At centre</span><span class="badge badge--home">At home</span></div>
               <button class="btn btn--secondary" type="button" data-go="request-1">Request</button>
             </div>
             <div class="card card--flat">
-              <div class="spread"><h3>Nail trim</h3><span class="price">₹200</span></div>
+              <div class="spread"><h3>Nail trim</h3><span class="price">â‚¹200</span></div>
               <p class="muted">15 min</p>
               <div class="row"><span class="badge badge--accent">At centre</span></div>
             </div>
@@ -493,24 +499,24 @@
 
           <div class="stack">
             <h2>Home visits</h2>
-            <p class="muted">Visits Sector 54, 56, 57, DLF Phase 4 and 6 more · up to 8 km</p>
+            <p class="muted">Visits Sector 54, 56, 57, DLF Phase 4 and 6 more Â· up to 8 km</p>
           </div>
 
           <div class="stack">
             <h2>Reviews (38)</h2>
             <div class="card card--flat">
               <div class="spread"><h3>Riya S.</h3><span class="muted">2 weeks ago</span></div>
-              <p><span style="color: var(--color-accent)" aria-hidden="true">★★★★★</span> <span class="sr-only">Rated 5 out of 5</span></p>
+              <p><span style="color: var(--color-accent)" aria-hidden="true">â˜…â˜…â˜…â˜…â˜…</span> <span class="sr-only">Rated 5 out of 5</span></p>
               <p class="muted">Gentle with my anxious beagle. Came home on time and cleaned up after.</p>
             </div>
             <button class="btn btn--secondary btn--block" type="button" data-go="login-note">Show all 38 reviews</button>
           </div>
 
-          <p class="muted">Free to request. The provider confirms — no payment here.</p>
+          <p class="muted">Free to request. The provider confirms â€” no payment here.</p>
         </div>
 
         <div class="sticky-actions">
-          <a class="btn btn--secondary" href="tel:+919876543210">📞 Call</a>
+          <a class="btn btn--secondary" href="tel:+919876543210">ðŸ“ž Call</a>
           <button class="btn btn--primary" type="button" data-go="request-1">Request booking</button>
         </div>
       </section>
@@ -518,10 +524,10 @@
       <!-- ================= REQUEST STEP 1 ================= -->
       <section class="screen" data-screen="request-1" aria-labelledby="r1-title">
         <div class="bar">
-          <button class="icon-btn" type="button" aria-label="Back" data-go="profile">←</button>
+          <button class="icon-btn" type="button" aria-label="Back" data-go="profile">â†</button>
           <h2>Request booking</h2>
           <span style="flex: 1"></span>
-          <button class="icon-btn" type="button" aria-label="Close" data-go="profile">×</button>
+          <button class="icon-btn" type="button" aria-label="Close" data-go="profile">Ã—</button>
         </div>
         <div class="stepper">
           <p>Step 1 of 3</p>
@@ -531,16 +537,16 @@
         <div class="body">
           <h1 id="r1-title">What do you need?</h1>
           <div class="stack" role="radiogroup" aria-label="Choose a service">
-            <button class="chip" type="button" role="radio" aria-checked="true" data-radio style="min-height: auto; padding: var(--space-3); border-radius: var(--radius-lg); white-space: normal; text-align: left; flex-direction: column; align-items: flex-start; gap: var(--space-1)">
-              <strong>Full groom — dogs</strong>
-              <span class="muted tabular">90 min · ₹800 – ₹1,500</span>
+            <button class="chip" type="button" role="radio" aria-checked="true" data-radio style="min-height: auto; padding: var(--spacing-3); border-radius: var(--radius-lg); white-space: normal; text-align: left; flex-direction: column; align-items: flex-start; gap: var(--spacing-1)">
+              <strong>Full groom â€” dogs</strong>
+              <span class="muted tabular">90 min Â· â‚¹800 â€“ â‚¹1,500</span>
             </button>
-            <button class="chip" type="button" role="radio" aria-checked="false" data-radio style="min-height: auto; padding: var(--space-3); border-radius: var(--radius-lg); white-space: normal; text-align: left; flex-direction: column; align-items: flex-start; gap: var(--space-1)">
+            <button class="chip" type="button" role="radio" aria-checked="false" data-radio style="min-height: auto; padding: var(--spacing-3); border-radius: var(--radius-lg); white-space: normal; text-align: left; flex-direction: column; align-items: flex-start; gap: var(--spacing-1)">
               <strong>Nail trim</strong>
-              <span class="muted tabular">15 min · ₹200</span>
+              <span class="muted tabular">15 min Â· â‚¹200</span>
             </button>
-            <button class="chip" type="button" role="radio" aria-checked="false" data-radio style="min-height: auto; padding: var(--space-3); border-radius: var(--radius-lg); white-space: normal; text-align: left">
-              Something else — I'll describe it
+            <button class="chip" type="button" role="radio" aria-checked="false" data-radio style="min-height: auto; padding: var(--spacing-3); border-radius: var(--radius-lg); white-space: normal; text-align: left">
+              Something else â€” I'll describe it
             </button>
           </div>
           <p class="muted">No payment here. The provider confirms.</p>
@@ -554,10 +560,10 @@
       <!-- ================= REQUEST STEP 2 ================= -->
       <section class="screen" data-screen="request-2" aria-labelledby="r2-title">
         <div class="bar">
-          <button class="icon-btn" type="button" aria-label="Back" data-go="request-1">←</button>
+          <button class="icon-btn" type="button" aria-label="Back" data-go="request-1">â†</button>
           <h2>Request booking</h2>
           <span style="flex: 1"></span>
-          <button class="icon-btn" type="button" aria-label="Close" data-go="profile">×</button>
+          <button class="icon-btn" type="button" aria-label="Close" data-go="profile">Ã—</button>
         </div>
         <div class="stepper">
           <p>Step 2 of 3</p>
@@ -570,8 +576,8 @@
           <div class="field">
             <label for="pet">Which pet?</label>
             <select class="input" id="pet">
-              <option>Simba — Beagle, 3 yrs</option>
-              <option>Add a pet…</option>
+              <option>Simba â€” Beagle, 3 yrs</option>
+              <option>Add a petâ€¦</option>
             </select>
           </div>
 
@@ -582,12 +588,12 @@
               <button class="chip" type="button" role="radio" aria-checked="false" data-radio>Tomorrow</button>
               <button class="chip" type="button" role="radio" aria-checked="true" data-radio>Tue 21</button>
               <button class="chip" type="button" role="radio" aria-checked="false" data-radio>Wed 22</button>
-              <button class="chip" type="button" disabled>Sun 26 · Closed</button>
+              <button class="chip" type="button" disabled>Sun 26 Â· Closed</button>
             </div>
             <div class="chips chips--wrap" role="radiogroup" aria-label="Choose a time window">
-              <button class="chip" type="button" role="radio" aria-checked="false" data-radio>Morning (8 am–12 pm)</button>
-              <button class="chip" type="button" role="radio" aria-checked="true" data-radio>Afternoon (12–4 pm)</button>
-              <button class="chip" type="button" role="radio" aria-checked="false" data-radio>Evening (4–8 pm)</button>
+              <button class="chip" type="button" role="radio" aria-checked="false" data-radio>Morning (8 amâ€“12 pm)</button>
+              <button class="chip" type="button" role="radio" aria-checked="true" data-radio>Afternoon (12â€“4 pm)</button>
+              <button class="chip" type="button" role="radio" aria-checked="false" data-radio>Evening (4â€“8 pm)</button>
             </div>
           </div>
 
@@ -600,8 +606,8 @@
             <div class="field">
               <label for="address">Address</label>
               <select class="input" id="address">
-                <option>Home — A-12, Sector 54</option>
-                <option>Add a new address…</option>
+                <option>Home â€” A-12, Sector 54</option>
+                <option>Add a new addressâ€¦</option>
               </select>
             </div>
           </div>
@@ -621,10 +627,10 @@
       <!-- ================= REQUEST STEP 3 ================= -->
       <section class="screen" data-screen="request-3" aria-labelledby="r3-title">
         <div class="bar">
-          <button class="icon-btn" type="button" aria-label="Back" data-go="request-2">←</button>
+          <button class="icon-btn" type="button" aria-label="Back" data-go="request-2">â†</button>
           <h2>Request booking</h2>
           <span style="flex: 1"></span>
-          <button class="icon-btn" type="button" aria-label="Close" data-go="profile">×</button>
+          <button class="icon-btn" type="button" aria-label="Close" data-go="profile">Ã—</button>
         </div>
         <div class="stepper">
           <p>Step 3 of 3</p>
@@ -636,13 +642,13 @@
 
           <div class="card card--flat summary">
             <div>
-              <span><strong>Happy Tails Grooming</strong><br /><span class="muted">Full groom — dogs · 90 min</span><br /><span class="price">₹800 – ₹1,500</span></span>
+              <span><strong>Happy Tails Grooming</strong><br /><span class="muted">Full groom â€” dogs Â· 90 min</span><br /><span class="price">â‚¹800 â€“ â‚¹1,500</span></span>
               <button class="btn btn--ghost" type="button" data-go="request-1">Edit</button>
             </div>
             <div><span>Simba (Beagle, 3 yrs)</span><button class="btn btn--ghost" type="button" data-go="request-2">Edit</button></div>
-            <div><span class="tabular">Tue, 21 Oct · Afternoon</span><button class="btn btn--ghost" type="button" data-go="request-2">Edit</button></div>
-            <div><span>At my home · A-12, Sector 54</span><button class="btn btn--ghost" type="button" data-go="request-2">Edit</button></div>
-            <div><span class="muted">“Simba is nervous with clippers.”</span><button class="btn btn--ghost" type="button" data-go="request-2">Edit</button></div>
+            <div><span class="tabular">Tue, 21 Oct Â· Afternoon</span><button class="btn btn--ghost" type="button" data-go="request-2">Edit</button></div>
+            <div><span>At my home Â· A-12, Sector 54</span><button class="btn btn--ghost" type="button" data-go="request-2">Edit</button></div>
+            <div><span class="muted">â€œSimba is nervous with clippers.â€</span><button class="btn btn--ghost" type="button" data-go="request-2">Edit</button></div>
           </div>
 
           <p class="panel panel--info">
@@ -658,8 +664,8 @@
 
       <!-- ================= CONFIRMATION ================= -->
       <section class="screen" data-screen="confirmation" aria-labelledby="done-title">
-        <div class="body" style="justify-content: center; text-align: center; gap: var(--space-5)">
-          <span class="success-mark" aria-hidden="true">✓</span>
+        <div class="body" style="justify-content: center; text-align: center; gap: var(--spacing-5)">
+          <span class="success-mark" aria-hidden="true">âœ“</span>
           <h1 id="done-title" tabindex="-1">Request sent</h1>
           <p class="muted">Happy Tails Grooming has your request for Tue, 21 Oct, afternoon.</p>
 
@@ -684,14 +690,14 @@
       <!-- ================= OUT OF SCOPE NOTICE ================= -->
       <section class="screen" data-screen="login-note" aria-labelledby="note-title">
         <div class="bar">
-          <button class="icon-btn" type="button" aria-label="Back" data-back>←</button>
+          <button class="icon-btn" type="button" aria-label="Back" data-back>â†</button>
           <h2>Not in this prototype</h2>
         </div>
         <div class="body" style="justify-content: center; text-align: center">
           <h1 id="note-title">This screen is specified, not prototyped</h1>
           <p class="muted">
             Core flow 1 is clickable here. Account, filters sheet, sort, map and the provider and
-            admin flows are specified in <code>docs/design/</code> and built in Phase 1–3.
+            admin flows are specified in <code>docs/design/</code> and built in Phase 1â€“3.
           </p>
           <button class="btn btn--primary" type="button" data-back>Go back</button>
         </div>
@@ -702,7 +708,7 @@
         <form class="sheet" method="dialog">
           <div class="spread">
             <h2 id="otp-title">Confirm your number</h2>
-            <button class="icon-btn" type="button" aria-label="Close" data-close-otp>×</button>
+            <button class="icon-btn" type="button" aria-label="Close" data-close-otp>Ã—</button>
           </div>
           <p class="muted">We'll text you a code so the provider knows you're real.</p>
 
@@ -727,7 +733,7 @@
             <p class="muted">Resend code in 0:29</p>
           </div>
 
-          <label class="row" style="align-items: flex-start; gap: var(--space-2)">
+          <label class="row" style="align-items: flex-start; gap: var(--spacing-2)">
             <input type="checkbox" style="min-width: 20px; min-height: 20px; margin-top: 2px" />
             <span class="muted">I agree to the Terms and Privacy Policy</span>
           </label>
@@ -738,8 +744,8 @@
     </main>
 
     <p class="note">
-      Prototype for core flow 1 — see <a href="../core-flows.md">core-flows.md</a>. Colours, type,
-      spacing and motion come from <code>packages/ui/src/styles/tokens.css</code>, so this page
+      Prototype for core flow 1 â€” see <a href="../core-flows.md">core-flows.md</a>. Colours, type,
+      spacing and motion come from <code>packages/ui/src/theme.css</code>, so this page
       shows the real "Indigo Care" tokens and cannot drift from them.
     </p>
 
@@ -780,7 +786,7 @@
         const toggle = event.target.closest('[data-filter]');
         if (toggle) {
           toggle.setAttribute('aria-pressed', toggle.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
-          document.getElementById('result-count').textContent = '18 groomers · within 10 km';
+          document.getElementById('result-count').textContent = '18 groomers Â· within 10 km';
           return;
         }
 
@@ -796,7 +802,7 @@
         if (fav) {
           const pressed = fav.getAttribute('aria-pressed') === 'true';
           fav.setAttribute('aria-pressed', String(!pressed));
-          fav.textContent = pressed ? '♡' : '♥';
+          fav.textContent = pressed ? 'â™¡' : 'â™¥';
         }
       });
 

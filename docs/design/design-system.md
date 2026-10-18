@@ -1,7 +1,8 @@
 # UrbanPetly Design System
 
 Owner: UI/UX Designer. Status: v0.1 (2026-10-18), Phase 0. Source of truth for every visual decision.
-Implementation lives in `packages/ui` (`src/tokens.ts`, `src/styles/tokens.css`, `tailwind-preset.cjs`).
+Implementation lives in `packages/ui` (`src/theme.css`, `src/tokens.ts`). Tailwind v4 — there is
+no `tailwind.config` and no preset; the theme *is* the stylesheet.
 
 > **Brand: "Indigo Care", chosen by the founder on 2026-10-18** (Paperclip SAM-7).
 > The decision and the rejected alternative are recorded in [brand-direction.md](brand-direction.md).
@@ -10,19 +11,25 @@ Implementation lives in `packages/ui` (`src/tokens.ts`, `src/styles/tokens.css`,
 ## 1. How tokens are layered
 
 ```
-primitive tokens      --up-indigo-600, --up-slate-200, --up-rose-500
-  (raw palette, never used directly in app code)
+primitive tokens      --up-brand-600, --up-neutral-200, --up-accent-500
+  (raw palette, plain CSS in :root, never used directly in app code)
         v
 semantic tokens       --color-primary, --color-fg-muted, --color-border-strong
-  (what a colour means; this is what components use)
+  (what a colour means; declared in @theme; this is what components use)
         v
 Tailwind utilities    bg-primary, text-fg-muted, border-border-strong
   (what app code writes)
 ```
 
+Primitives stay **outside** `@theme` on purpose — that is what makes a brand change a values-only
+edit. The semantic layer uses `@theme inline static`: `inline` so a utility emits
+`var(--up-brand-600)` rather than a baked-in literal (otherwise overriding a primitive stops
+cascading), `static` so every token is emitted even when no utility used it, which is what keeps
+`resolveToken()` working for map and canvas code.
+
 Rules:
 1. App code never writes a hex value, a raw px spacing value, or a raw primitive token. Use the Tailwind utility backed by a semantic token (`02-architecture.md` §5).
-2. New semantic token = a design decision. Add it here first, then to `tokens.css`, then to the preset.
+2. New semantic token = a design decision. Add it here first, then to `theme.css`.
 3. If you need a colour that does not exist as a semantic token, you probably need an existing one. Ask the designer on the issue.
 
 ## 2. Colour
@@ -33,11 +40,14 @@ Rules:
 |---|---|---|---|---|---|---|---|---|---|---|
 | `indigo` (brand) | `#EEF2FF` | `#E0E7FF` | `#C7D2FE` | `#A5B4FC` | `#818CF8` | `#6366F1` | `#4F46E5` | `#4338CA` | `#3730A3` | `#312E81` |
 | `rose` (accent) | `#FFF1F2` | `#FFE4E6` | `#FECDD3` | `#FDA4AF` | `#FB7185` | `#E11D48` | `#BE123C` | `#9F1239` | — | — |
-| `slate` (cool neutral) | `#F8FAFC` | `#F1F5F9` | `#E2E8F0` | `#CBD5E1` | `#94A3B8` | `#64748B` | `#475569` | `#334155` | `#1E293B` | `#0F172A` |
+| `slate` (cool neutral) | `#F8FAFC` | `#F1F5F9` | `#E2E8F0` | `#CBD5E1` | `#94A3B8` | `#5B6A7F` | `#475569` | `#334155` | `#1E293B` | `#0F172A` |
 
 In CSS the ramps are named by **role**, not hue — `--up-brand-*`, `--up-accent-*`, `--up-neutral-*` — so a future brand change replaces values only, never names.
 
-`slate-400` (`#94A3B8`) is **2.56:1 on white and fails WCAG 1.4.11**. It is decorative only; interactive borders use `slate-500`. The contrast guard fails the build if `--color-border-strong` is ever repointed at it.
+Two deliberate departures from a stock slate ramp, both forced by contrast:
+
+- **`slate-400` (`#94A3B8`) is decorative only** — 2.56:1 on white, which fails WCAG 1.4.11. It is never an interactive border. The guard fails the build if `--color-border-strong` is repointed at it.
+- **`slate-500` is `#5B6A7F`, not `#64748B`.** Stock slate-500 is 4.76:1 on white but only **4.34:1 on `surface-sunken`** and **4.26:1 on `primary-subtle`** — and `fg-subtle` and `border-strong` both sit on those backgrounds. `#5B6A7F` clears 4.9:1 everywhere we use it. The guard now tests every background a token actually lands on, so this cannot drift back.
 
 Status primitives: success `#15803D` / subtle `#ECFDF3` / fg `#166534` · warning `#B45309` / subtle `#FFF8EB` / fg `#854D0E` · danger `#DC2626` / subtle `#FEF2F2` / fg `#991B1B` · info `#0369A1` / subtle `#EFF8FF` / fg `#075985`.
 
@@ -75,33 +85,39 @@ Status primitives: success `#15803D` / subtle `#ECFDF3` / fg `#166534` · warnin
 
 Measured, not assumed. Text needs 4.5:1 (3:1 for ≥24px or ≥19px bold); UI boundaries and focus indicators need 3:1 (1.4.11).
 
-| Pair | Ratio | Verdict |
+Foreground tokens are measured against **every background they actually land on**, not just the
+flattering ones. The five backgrounds in play are `surface` (`#FFFFFF`), `bg` (`#F8FAFC`),
+`surface-sunken` (`#F1F5F9`), `primary-subtle` (`#EEF2FF`) and `accent-subtle` (`#FFF1F2`).
+
+| Pair | surface | bg | sunken | primary-subtle | accent-subtle | Verdict |
+|---|---|---|---|---|---|---|
+| `fg` (`#0F172A`) | 17.85 | 17.06 | 16.30 | 15.97 | 16.25 | AAA |
+| `fg-muted` (`#475569`) | 7.58 | 7.24 | 6.92 | 6.78 | 6.90 | AAA |
+| `fg-subtle` (`#5B6A7F`) | 5.51 | 5.26 | 5.03 | 4.93 | 5.01 | AA |
+| `border-strong` (`#5B6A7F`) | 5.51 | 5.26 | 5.03 | 4.93 | 5.01 | AA (1.4.11) |
+| `focus-ring` (`#4F46E5`) | 6.29 | 6.01 | 5.74 | 5.62 | 5.72 | AA (1.4.11) |
+| `primary` link text | 6.29 | 6.01 | 5.74 | — | — | AA |
+| `accent` fill — stars, non-text | 4.70 | 4.49 | 4.29 | — | — | AA (1.4.11) |
+
+| Other pair | Ratio | Verdict |
 |---|---|---|
-| `fg` on `surface` (`#0F172A`/`#FFFFFF`) | 17.85 | AAA |
-| `fg` on `bg` (`#0F172A`/`#F8FAFC`) | 17.06 | AAA |
-| `fg-muted` on `surface` (`#475569`) | 7.58 | AAA |
-| `fg-subtle` on `surface` (`#64748B`) | 4.76 | AA — placeholders/disabled only |
 | `primary-fg` on `primary` (white/`#4F46E5`) | 6.29 | AA |
-| `primary` on `surface` (link text) | 6.29 | AA |
 | white on `primary-hover` (`#4338CA`) | 7.90 | AAA |
 | white on `primary-active` (`#3730A3`) | 9.93 | AAA |
+| `primary-hover` on `primary-subtle` (chip) | 7.07 | AAA |
 | `accent-fg` on `accent` (white/`#E11D48`) | 4.70 | AA |
 | **`fg` on `accent`** (dark ink on rose) | **3.80** | **FAIL — forbidden combination** |
-| `accent-strong` on `accent-subtle` (`#9F1239`/`#FFF1F2`) | 7.30 | AAA |
-| `accent-strong` on `surface` | 8.02 | AAA |
-| `accent` on `surface` (rating stars, non-text) | 4.70 | AA (1.4.11) |
+| `accent-strong` on `surface` / `accent-subtle` (`#9F1239`) | 8.02 / 7.30 | AAA |
 | **`accent-fg` on `accent-subtle`** (white on rose-50) | **1.10** | **FAIL — use `accent-strong` for ink on a subtle chip** |
 | `success` on `surface` | 5.02 | AA |
 | `danger` on `surface` (and white on `danger`) | 4.83 | AA |
 | `info` on `surface` | 5.93 | AA |
 | `warning-700` on `surface` (`#B45309`) | 5.02 | AA |
 | status `-fg` on matching `-subtle` (4 pairs) | 6.49–7.60 | AAA |
-| `border-strong` on `surface` (`#64748B`) | 4.76 | AA (1.4.11) |
 | `border` on `surface` (`#CBD5E1`) | 1.48 | Decorative only — never the sole indicator of a control |
-| `focus-ring` on `surface` / `bg` / `surface-sunken` | 6.29 / 6.01 / 5.74 | AA (1.4.11) |
 | `indigo-300` on `slate-900` (dark focus ring) | 8.96 | AAA |
 
-These numbers are not hand-maintained. `packages/ui/scripts/check-contrast.mjs` parses `tokens.css`, resolves each semantic token to its literal, and fails the build if any required pair drops below its threshold **or if a forbidden pair starts passing**. Run it with `pnpm --filter @urbanpetly/ui check:tokens`; CI runs it on every PR.
+These numbers are not hand-maintained. `packages/ui/scripts/check-contrast.mjs` parses `theme.css`, resolves each semantic token to its literal, and fails the build if any required pair drops below its threshold **or if a forbidden pair starts passing**. It also **fails loudly if it cannot find the block it is guarding** — a guard that silently tests nothing is worse than no guard. Run it with `pnpm --filter @urbanpetly/ui check:tokens`; CI runs it on every PR.
 
 ### 2.4 Colour rules
 - Colour is never the only carrier of meaning: status chips pair colour with a label and an icon; map pins pair colour with a shape.
@@ -157,13 +173,15 @@ Conventions: screen gutter `4` (16px) at 360px, `6` (24px) ≥768px. Card paddin
 
 - **Mobile first, designed and tested at 360px** (`05-ux-spec`, `02-architecture` §5). Every spec in `docs/design/` is written at 360px first; wider views are listed as "Responsive".
 - Content max width 1200px; prose max 68ch; listing grid: 1 column < 768, 2 columns ≥768, 3 columns ≥1280 (list view with map collapses to 1 column + map panel ≥1024).
-- Sticky elements: header (`--z-header`) and, on provider profile, a bottom action bar. Bottom bar sits above the safe area: `padding-bottom: max(var(--space-4), env(safe-area-inset-bottom))`.
+- Sticky elements: header (`--z-header`) and, on provider profile, a bottom action bar. Bottom bar sits above the safe area — use the `pb-safe` utility, which is `padding-bottom: max(var(--spacing-4), env(safe-area-inset-bottom))`.
 
 ## 6. Radius, elevation, borders
 
 | Radius | `sm` 6px | `md` 12px | `lg` 16px | `xl` 24px | `pill` 9999px |
 |---|---|---|---|---|---|
 | Used by | Chips, badges, small inputs | Buttons, inputs, selects | Cards, images | Sheets, modals | Chips, avatars, filter pills |
+
+The bare `rounded` and `shadow` classes still work: `rounded` = `rounded-md` (12px), `shadow` = `shadow-sm`. They are kept because people type them from habit, and a class that silently does nothing is a bug waiting to be debugged twice.
 
 | Shadow | Value | Use |
 |---|---|---|
@@ -187,7 +205,14 @@ Elevation is shadow + surface, never a different brand colour. Default border is
 
 Rules: animate `transform` and `opacity` only (never `height`/`top` — CLS budget is 0.1). Nothing animates for longer than 240ms. Skeletons use a 1.2s opacity pulse, not a sweeping gradient.
 
-**Reduced motion is mandatory.** Under `@media (prefers-reduced-motion: reduce)` all durations collapse to `1ms`, the skeleton pulse becomes a static tint, and sheets appear without sliding. This is handled once globally in `tokens.css`; components do not reimplement it.
+A bare `transition` is never instant: `--default-transition-duration` is `--duration-base` and `--default-transition-timing-function` is `--ease-standard`.
+
+**Reduced motion is mandatory.** Under `@media (prefers-reduced-motion: reduce)` all durations collapse to `1ms`, the skeleton pulse becomes a static tint, and sheets appear without sliding. This is handled once globally in `theme.css`; components do not reimplement it.
+
+Two things that rule does *not* do for you:
+
+- **Motion that carries meaning opts out.** A spinner frozen at 1ms stops saying "still working" and a frozen skeleton stops saying "not loaded yet". Those elements set `data-motion-essential` to escape the global clamp, and are then responsible for presenting a calmer form themselves — a slow opacity pulse rather than a spin, never a flash.
+- **JS-driven animation is not covered.** CSS reads `--duration-*`, which the clamp rewrites; JS reading the `durationMs` constant does not. Use `animationDurationMs()` from `@urbanpetly/ui/tokens`, which returns 1 under reduced motion.
 
 ## 8. Z-index
 
@@ -200,7 +225,7 @@ Every interactive component must specify all of: **default, hover, focus-visible
 | State | Rule |
 |---|---|
 | Hover | Only on `@media (hover: hover)`. Background steps one shade; never move layout. |
-| **Focus** | `outline: 3px solid var(--color-focus-ring); outline-offset: 2px;` on `:focus-visible`. **Never** `outline: none` without an equally visible replacement. Focus is visible on every background (verified 5.74–6.29:1). |
+| **Focus** | `outline: 3px solid var(--color-focus-ring); outline-offset: 2px;` on `:focus-visible`, defined once globally. Focus is visible on every background (verified 5.62–6.29:1). **`outline-none` is banned** — including Tailwind's `focus:outline-none`. It has higher specificity than the global rule, so it wins silently; the rule is a backstop, lint is the actual enforcement. If a control needs a custom indicator, apply the `focus-ring` utility, never remove the outline and stop there. |
 | Active | `--color-primary-active`; optional `transform: scale(0.98)` within reduced-motion rules. |
 | Disabled | `--color-surface-sunken` background, `--color-fg-subtle` text, `cursor: not-allowed`, `aria-disabled="true"`. Prefer *enabled + explain the error* over disabling a submit button. |
 | Loading | Keep the element's size (no layout shift), show a spinner, set `aria-busy="true"`, and announce via `aria-live="polite"`. Buttons keep their label and add the spinner before it. |

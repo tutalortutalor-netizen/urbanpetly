@@ -1,7 +1,7 @@
 /**
  * Typed token accessors for JavaScript/TypeScript consumers.
  *
- * Raw values live in ONE place: src/styles/tokens.css. These helpers return
+ * Raw values live in ONE place: src/theme.css. These helpers return
  * `var(--token)` references so there is nothing to keep in sync and a brand swap
  * cannot drift. Non-colour scales that JS genuinely needs as numbers
  * (breakpoints, durations, target size) are duplicated below and asserted
@@ -53,18 +53,18 @@ export const color = {
 } as const;
 
 export const space = {
-  1: 'var(--space-1)',
-  2: 'var(--space-2)',
-  3: 'var(--space-3)',
-  4: 'var(--space-4)',
-  5: 'var(--space-5)',
-  6: 'var(--space-6)',
-  8: 'var(--space-8)',
-  10: 'var(--space-10)',
-  12: 'var(--space-12)',
-  16: 'var(--space-16)',
-  20: 'var(--space-20)',
-  24: 'var(--space-24)',
+  1: 'var(--spacing-1)',
+  2: 'var(--spacing-2)',
+  3: 'var(--spacing-3)',
+  4: 'var(--spacing-4)',
+  5: 'var(--spacing-5)',
+  6: 'var(--spacing-6)',
+  8: 'var(--spacing-8)',
+  10: 'var(--spacing-10)',
+  12: 'var(--spacing-12)',
+  16: 'var(--spacing-16)',
+  20: 'var(--spacing-20)',
+  24: 'var(--spacing-24)',
 } as const;
 
 export const radius = {
@@ -97,24 +97,50 @@ export const zIndex = {
   toast: 'var(--z-toast)',
 } as const;
 
-/** Breakpoints in px. Must match `screens` in tailwind-preset.cjs. */
+/** Breakpoints in px. Must match `--breakpoint-*` in src/theme.css. */
 export const breakpoint = { sm: 480, md: 768, lg: 1024, xl: 1280 } as const;
 
 /** Minimum interactive target in px (05-ux-spec). Must match `--target-min`. */
 export const TARGET_MIN_PX = 44;
 
-/** Durations in ms, for JS-driven animation (Framer/WAAPI). Must match the CSS. */
+/**
+ * Durations in ms, for JS-driven animation (Framer/WAAPI).
+ *
+ * These are the *unreduced* values and must match the CSS. CSS gets reduced
+ * motion for free — `theme.css` clamps `--duration-*` to 1ms under
+ * `prefers-reduced-motion` — but JS reading a constant does not. Never pass
+ * these straight to an animation; use `animationDurationMs()` below.
+ */
 export const durationMs = { fast: 120, base: 180, slow: 240 } as const;
+
+/** True when the user has asked for reduced motion. False during SSR/prerender. */
+export function prefersReducedMotion(): boolean {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+/**
+ * The duration a JS-driven animation should actually use — 1ms under reduced
+ * motion, matching what the stylesheet does to its CSS counterpart.
+ * This is the only duration a Framer/WAAPI call should see (design-system.md §7).
+ */
+export function animationDurationMs(name: keyof typeof durationMs): number {
+  return prefersReducedMotion() ? 1 : durationMs[name];
+}
 
 /**
  * Resolve a token to its computed value at runtime.
  * Needed by canvas/WebGL consumers — map pins, chart fills — which cannot use var().
+ *
+ * Accepts any of `color.primary` (`'var(--color-primary)'`), `'--color-primary'`
+ * or `'color-primary'`, because every value this module exports is the first form.
  * Returns an empty string during SSR/prerender, so always provide a fallback.
  */
 export function resolveToken(token: string, element: Element | null = null): string {
   if (typeof window === 'undefined') return '';
   const target = element ?? document.documentElement;
-  const name = token.startsWith('--') ? token : `--${token}`;
+  const unwrapped = /^var\(\s*(--[\w-]+)\s*\)$/.exec(token.trim())?.[1] ?? token.trim();
+  const name = unwrapped.startsWith('--') ? unwrapped : `--${unwrapped}`;
   return getComputedStyle(target).getPropertyValue(name).trim();
 }
 
