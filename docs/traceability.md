@@ -19,7 +19,7 @@ This file maps each acceptance criterion in `01-epics-and-user-stories.md` to th
 
 Every test ID below is `planned`: the test harness itself is SAM-8 (`test/E12-qa-infrastructure`), which lands after the monorepo scaffold. Planned file paths follow the scaffold's co-located convention (`apps/api/src/modules/<area>/<file>.test.ts`) and are confirmed when SAM-8 lands.
 
-**Scope of this revision.** Full case-level mappings for the three stories raised to P0 by ADR-027 (E4-S5, E4-S6, E5-S5), for the two shared rules they depend on (ADR-028 window ends, the 72-hour response window), and for the four E4-S7 criteria that ADR-028 made testable. The remaining P0 stories are mapped in SAM-8, which extends this file rather than replacing it.
+**Scope of this revision.** Full case-level mappings for the three stories raised to P0 by ADR-027 (E4-S5, E4-S6, E5-S5), for the two shared rules they depend on (ADR-028 window ends, the 72-hour response window), and for the four E4-S7 criteria that ADR-028 made testable. Current as of `1b00739` on `main`, which added two criteria to E5-S5 and one to E5-S1 (ADR-031). The remaining P0 stories are mapped in SAM-8, which extends this file rather than replacing it.
 
 ---
 
@@ -128,7 +128,9 @@ Planned homes: `apps/api/src/modules/requests/complete.test.ts`, `apps/api/src/m
 
 ## E5-S5 - Edit my review for 7 days
 
-`04-api-contract.md` offers `PATCH /reviews/:id` ("edit within 7 days"). It has no delete route - see Open items.
+Eleven criteria since ADR-031 (`1b00739`), which settled what a deletion inside the window does to the customer's one-review-per-provider slot: it **spends** it. Criteria 4 and 5 are new and the ones after them shifted by two; the `#` column below follows the merged story.
+
+`04-api-contract.md` offers `PATCH /reviews/:id` ("edit within 7 days") and still has no delete route - see Open items. ADR-031 now fixes what that route has to do (stop the review being public and counting, keep the slot), so the shape is no longer open, only the contract entry and the schema behind it (gap T8).
 
 | # | Acceptance criterion | Test ID | Level | Status | Notes |
 |---|---|---|---|---|---|
@@ -141,24 +143,27 @@ Planned homes: `apps/api/src/modules/requests/complete.test.ts`, `apps/api/src/m
 | 2 | Edit changing 5★ to 1★ on a provider with one review moves the average to 1.0, not to an average of the two values | `E5-S5-API06` | API | planned | Guards the obvious aggregate bug |
 | 3 | Delete within the window → the review disappears from the profile; the average and count no longer include it | `E5-S5-API07` | API | planned | |
 | 3 | Deleting the only review returns the provider to the "New on UrbanPetly" empty state, not to a 0.0 rating | `E5-S5-API08` | API | planned | E5-S2's last-review-removed case |
-| 4 | Review older than 7 days → no edit or delete offered, and the customer is told the window has closed | `E5-S5-API09` | API | planned | Refused on a direct `PATCH` too, with 422 `BUSINESS_RULE` |
-| 5 | Another completed request with an already-reviewed provider, earlier review still inside its window → offered to update it | `E5-S5-API10` | API | planned | Closes E5-S1's "update my existing one instead" |
-| 5 | Same, window closed → told the existing review stands, and no second review is created | `E5-S5-API11` | API | planned | `UNIQUE(provider_id, customer_id)` must not be reached as a 500; expect a clean 422 |
-| 6 | Edited body containing contact details → held for moderation exactly as a new review would be, and the previous version stays public meanwhile | `E5-S5-API12` | API | planned | Two assertions: new version `pending`, profile still serving the old text |
-| 7 | Admin hid the review → an edit inside the window is refused and the customer is shown why it was hidden | `E5-S5-API13` | API | planned | `reviews.status = 'hidden'` |
-| 8 | Someone else's review → edit and delete both refused | `E5-S5-API14` | API | planned | Signed out, wrong role, and signed in as another customer; nothing about the review leaked in the error |
-| 9 | After an edit the provider sees the current version only, and is not emailed again | `E5-S5-API15` | API | planned | Assert no new `notifications` row |
+| 4 | After deleting inside the window the customer's one review for that provider is spent: a new review for that provider is refused and they are told why | `E5-S5-API17` | API | planned | ADR-031. ID carried over from the blocked pair below, which this answer resolved |
+| 4 | "or for the completed request it came from": the original request offers no review action, and `POST /requests/:id/reviews` against it is refused | `E5-S5-API18` | API | planned | Absent from the payload **and** refused when posted directly; expect 422 `BUSINESS_RULE`, not a 500 from `request_id UNIQUE` |
+| 4 | "then or later": the slot is still spent once the 7-day window has closed | `E5-S5-API19` | API | planned | Clock advanced past `edited_until`; distinguishes "spent" from "blocked while the window runs" |
+| 4 | A deleted review stays out of the profile, the average and the count after a later request completes | `E5-S5-API20` | API | planned | Guards a soft delete that holds the slot (gap T8) from leaking back into the listing or the aggregate |
+| 4 | Repeat request with a provider whose review was deleted → the customer is told they have already used their review, and no new review is offered | `E5-S1-API01` | API | planned | E5-S1 criterion 5, the flip side of ADR-031. First E5-S1 ID; SAM-8 continues from `E5-S1-API02` |
+| 5 | The delete confirmation says the review is gone for good and that no new review can be written for this provider, and offers "Edit" | `E5-S5-E2E03` | E2E | planned | Three assertions on the dialog: the permanence, the named consequence, and an "Edit" control. Copy wording is free; the three facts are not |
+| 5 | Choosing "Edit" from the confirmation lands on the edit form with the review intact, and nothing is deleted | `E5-S5-E2E04` | E2E | planned | The alternative has to work, otherwise it is a label |
+| 5 | Dismissing the confirmation leaves the review untouched | `E5-S5-E2E05` | E2E | planned | No delete request sent; review still on the profile and still counted |
+| 6 | Review older than 7 days → no edit or delete offered, and the customer is told the window has closed | `E5-S5-API09` | API | planned | Refused on a direct `PATCH` too, with 422 `BUSINESS_RULE` |
+| 7 | Another completed request with an already-reviewed provider, earlier review still inside its window → offered to update it | `E5-S5-API10` | API | planned | Closes E5-S1's "update my existing one instead" |
+| 7 | Same, window closed → told the existing review stands, and no second review is created | `E5-S5-API11` | API | planned | `UNIQUE(provider_id, customer_id)` must not be reached as a 500; expect a clean 422 |
+| 8 | Edited body containing contact details → held for moderation exactly as a new review would be, and the previous version stays public meanwhile | `E5-S5-API12` | API | planned | Two assertions: new version `pending`, profile still serving the old text |
+| 9 | Admin hid the review → an edit inside the window is refused and the customer is shown why it was hidden | `E5-S5-API13` | API | planned | `reviews.status = 'hidden'` |
+| 10 | Someone else's review → edit and delete both refused | `E5-S5-API14` | API | planned | Signed out, wrong role, and signed in as another customer; nothing about the review leaked in the error |
+| 11 | After an edit the provider sees the current version only, and is not emailed again | `E5-S5-API15` | API | planned | Assert no new `notifications` row |
+| - | A review reported before it was deleted keeps its moderation record and is still reachable from the admin queue | `E5-S5-API21` | API | planned | ADR-031's stated reason for spending the slot rather than hard-deleting; pairs with E5-S4 and E8-S3 and is the case gap T8 has to satisfy |
 | - | Edit and delete flows end to end, including the confirmation step before a delete | `E5-S5-E2E02` | E2E | planned | |
 | - | Edit form and delete confirmation pass axe-core; the confirmation is reachable and dismissible by keyboard and the rating control is labelled | `E5-S5-A11Y01` | A11Y | planned | |
+| - | The permanence warning is in the dialog's accessible name or description, not only in sighted copy | `E5-S5-A11Y02` | A11Y | planned | A screen-reader user must hear the consequence before the confirm button, otherwise ADR-031's trap is only closed for sighted customers |
 
-Pending the SAM-50 answer (see Open items):
-
-| Case | Test ID | Level | Status |
-|---|---|---|---|
-| After deleting inside the window, the customer **may** write a new review for that completed request | `E5-S5-API16` | API | blocked - SAM-50 |
-| After deleting inside the window, the customer **may not** write a new review; they are told their review is spent | `E5-S5-API17` | API | blocked - SAM-50 |
-
-Exactly one of `E5-S5-API16` and `E5-S5-API17` survives the answer; the other is deleted rather than skipped. Either way `E5-S5-API07` and `E5-S5-API08` hold, so the delete path is not blocked as a whole.
+> **`E5-S5-API16` is withdrawn, not renumbered.** The previous revision carried a mutually exclusive pair for the question SAM-50 was holding: `API16` for "the customer may write a new one", `API17` for "the review is spent". ADR-031 chose spent, so `API17` is now a live case above and `API16` is gone. The number is **not** reused, so nothing that referenced it can silently come to mean the opposite.
 
 Planned homes: `apps/api/src/modules/reviews/edit.test.ts`, `apps/api/src/modules/reviews/ratings.test.ts`, `e2e/specs/review-edit.spec.ts`.
 
@@ -168,11 +173,16 @@ Planned homes: `apps/api/src/modules/reviews/edit.test.ts`, `apps/api/src/module
 
 | # | Item | Raised with | Effect if unanswered |
 |---|---|---|---|
-| 1 | Deleting a review inside the 7-day window: is the customer's one review spent, or may they write a new one? | Product Owner, SAM-50 | `E5-S5-API16`/`E5-S5-API17` stay blocked. The rest of E5-S5 is unaffected |
-| 2 | `04-api-contract.md` has `PATCH /reviews/:id` but no delete route, while E5-S5 criterion 3 requires Delete. The route needs adding to the contract - and the answer to item 1 decides whether it is a hard delete or a soft one | Product Owner / Tech Lead | `E5-S5-API07`/`E5-S5-API08` can be written against either shape, but the contract test cannot |
-| 3 | Soft delete has no home in the schema: `reviews` in `03-data-model.md` has no `deleted_at` and `status` is `('published','hidden','pending')`. If item 1 is answered "the review is spent", a migration is needed; if "hard delete", `request_id UNIQUE` and `UNIQUE(provider_id, customer_id)` free themselves and no change is needed | Tech Lead | Noted so the decision is costed before it is made |
+| 1 | ~~Deleting a review inside the 7-day window: is the customer's one review spent, or may they write a new one?~~ **Answered: spent (ADR-031, `1b00739`).** Criteria 4 and 5 of E5-S5 and criterion 5 of E5-S1 are mapped above | - | Closed |
+| 2 | `04-api-contract.md` has `PATCH /reviews/:id` but still no delete route, while E5-S5 criterion 3 requires Delete. ADR-031 settles the behaviour, so what is left is the contract entry: the route, and the response the refused repeat review gets (`E5-S5-API17`, `E5-S5-API18`) | Tech Lead | `E5-S5-API07`, `API08`, `API17`-`API20` can be written against the behaviour, but the contract test cannot |
+| 3 | A deletion that holds the slot has no home in the schema: `reviews` in `03-data-model.md` has no deleted state and `status` is `('published','hidden','pending')`. Now tracked as the Tech Lead's gap **T8** in `09-decisions-and-open-questions.md` | Tech Lead, gap T8 | `E5-S5-API20` and `E5-S5-API21` are the two cases whatever T8 lands on has to pass: out of the public listing and the aggregate, still holding the slot, still carrying a raised report |
 | 4 | Does the end instant of an appointment window count as passed? Assumed yes (`SR1-UNIT07`) | Product Owner, if they disagree | Two unit cases flip; no other case changes |
 
 ## What this file still owes
 
 Case-level mappings for the remaining P0 stories across E1-E12, the authorisation test matrix from `07-test-plan.md`, and the non-functional suites. Tracked in SAM-8 (`test/E12-qa-infrastructure`), which extends this file. Until then the gate in `07-test-plan.md` - every P0 story mapped to at least one automated test - is met for E4-S5, E4-S6, E5-S5 and the window-dependent half of E4-S7, and not yet for the others.
+
+Two specific hand-offs to SAM-8, so neither is lost between stories:
+
+- **E5-S1** has one case here, `E5-S1-API01` (its criterion 5, the ADR-031 flip side, which only makes sense next to the delete cases). Its other ten criteria are unmapped; SAM-8 continues the numbering from `E5-S1-API02`.
+- **E9-S1** gained two criteria in `d87050c` and `1b00739` - the zero-provider locality page (ADR-029) and the not-found for a locality that does not exist or belongs to another city. They are new untested surface and they are deliberately **not** absorbed here: this revision covers E4-S5, E4-S6, E5-S5 and part of E4-S7, and E9-S1 has no rows at all yet. The pair wants testing together, because serving one where the other belongs is exactly the soft-404 the two decisions exist to prevent.
