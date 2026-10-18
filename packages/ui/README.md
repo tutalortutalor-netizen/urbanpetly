@@ -66,17 +66,21 @@ pnpm --filter @urbanpetly/ui check:tokens
 ```
 
 Fails the build when a required contrast pair drops below WCAG AA, when a pairing the design
-system forbids (white on the marigold accent) starts passing, when a semantic token does not
+system forbids (dark ink on the rose accent) starts passing, when a semantic token does not
 resolve, or when `tokens.ts` / the preset drift from `tokens.css`. Wire it into CI alongside
 lint and typecheck (`07-test-plan.md`).
 
-## Brand options
+## Brand
 
-Brand **Option A ("Marigold") is the provisional default**, pending the founder's choice in
-[`docs/design/brand-direction.md`](../../docs/design/brand-direction.md). Option B
-("Indigo Care") is implemented as a values-only override — preview it with
-`<html data-brand="indigo-care">`. Once the decision is made, the losing block is deleted and
-the winning values move into `:root`. No component or class name changes either way.
+**"Indigo Care"** — indigo primary, rose accent, cool slate neutrals, *Outfit* headings over
+*Inter* body. Chosen by the founder on 2026-10-18; rationale and the rejected alternative are in
+[`docs/design/brand-direction.md`](../../docs/design/brand-direction.md).
+
+Two things to know before you reach for a colour:
+
+- The accent carries **white** text, not dark ink (`--color-accent-fg` is white, 4.70:1). Dark ink
+  on rose is 3.80:1 and the guard fails the build if anyone tries it.
+- `--up-neutral-400` is decorative only (2.56:1). Interactive borders use `--color-border-strong`.
 
 ## Status
 

@@ -1,21 +1,22 @@
-# Brand direction — two options for the founder
+# Brand direction
 
-Owner: UI/UX Designer. Status: **awaiting founder decision** (Paperclip issue SAM-7).
-Both options satisfy `05-ux-spec` ("warm, trustworthy, friendly; not childish") and WCAG 2.1 AA.
-Both are fully specified as tokens, so **choosing is a values-only swap in `packages/ui/src/styles/tokens.css`** — no component, class name, layout or screen-spec change. Option A ships as the provisional default so development is not blocked.
+Owner: UI/UX Designer.
 
-## How to decide
+> ## Decision: **Option B — "Indigo Care"**
+>
+> Chosen by the founder on **2026-10-18** (Paperclip issue SAM-7), with the wordmark
+> **capitalised: `UrbanPetly`**. Shipped in `packages/ui/src/styles/tokens.css`; the Option A
+> preview block has been removed. Option A is kept below as the record of what was considered
+> and why — do not reintroduce its values without a new decision on an issue.
+>
+> **Still open:** the home hero tagline (placeholder stands — see [home.md](home.md)) and whether
+> any logo or colour from the domain purchase must be preserved. Neither blocks development.
 
-Pick the one that sounds more like UrbanPetly to a pet parent in Gurgaon who has never heard of us:
-
-- **Option A** says *"the friendly local place that knows your neighbourhood."*
-- **Option B** says *"the careful, professional service you'd trust with a vet appointment."*
-
-Reply on issue SAM-7 with **"Brand A"** or **"Brand B"** (plus anything you want changed). If you want a blend — e.g. A's palette with B's wordmark — say so; that is cheap now and expensive after Phase 1.
+Both options satisfied `05-ux-spec` ("warm, trustworthy, friendly; not childish") and WCAG 2.1 AA, and both were specified as tokens, so the choice was a values-only swap — no component, class name, layout or screen-spec change.
 
 ---
 
-## Option A — "Marigold" (provisional default)
+## Option A — "Marigold" (not chosen)
 
 **Idea.** Delhi warmth without the clichés. A deep, calm teal does the trustworthy work; marigold — the flower on every doorway and garland in NCR — does the warmth. Photography-led, generous whitespace, soft corners.
 
@@ -50,7 +51,7 @@ Pairs cleanly with *Noto Sans Devanagari* for the Hindi release.
 
 ---
 
-## Option B — "Indigo Care"
+## Option B — "Indigo Care" (CHOSEN, shipped)
 
 **Idea.** Clinical calm. Closer to a health product than a marketplace: cool indigo, crisp slate neutrals, tighter grid, a single warm accent used sparingly for urgency and ratings.
 
@@ -89,17 +90,20 @@ Slightly larger radii (`lg` 16, `xl` 24) and cooler, tighter shadows.
 | Strength | Memorable, local, human | Credible, clean, "medical-grade" |
 | Risk | Can read as food delivery if accent is overused | Generic SaaS; weaker emotional pull |
 | Hindi/Devanagari | Noto Sans Devanagari pairs well | Pairs acceptably; Outfit has no Devanagari sibling |
-| AA contrast | Verified (design-system.md §2.3) | Verified (above) |
+| AA contrast | Verified when proposed | Verified and guarded in CI (design-system.md §2.3) |
 
-## What happens after the decision
+## Follow-through on the decision
 
-1. Designer swaps the primitive values in `packages/ui/src/styles/tokens.css` (one commit, ~20 lines) and reruns `check-contrast.mjs`.
-2. Logo is produced as SVG (`packages/ui/src/assets/`) in three lockups: full, compact, mark-only + favicon set.
-3. The rest of the system — spacing, type scale, components, every screen spec — is unaffected.
+| Step | State |
+|---|---|
+| Swap the primitive values in `packages/ui/src/styles/tokens.css`, delete the preview block, rerun `check-contrast.mjs` | **Done** — all 26 pairs pass, see design-system.md §2.3 |
+| Update design-system.md, the screen specs and the prototype to the new palette, type and radii | **Done** |
+| Logo as SVG (`packages/ui/src/assets/`) in three lockups — full, compact, mark-only + favicon set | **To do** — follow-up issue; needs the scaffold (E12-S1) for a place to import from |
+| Self-host *Outfit* and *Inter* woff2 subsets per the `06-nfr` performance budget | **To do** — with the first components |
 
-## Open questions for the founder
+Spacing, the type scale, every component contract and every screen spec were unaffected by the choice, as designed.
 
-1. **A or B** (or a blend)?
-2. Is `urbanpetly` lowercase acceptable in the wordmark, or do you want `UrbanPetly`?
-3. Do we have an existing logo, colour or asset from the domain purchase that we must keep?
-4. Tagline for the home hero — current placeholder is **"Every pet service in Delhi NCR, in one place."** Approve or replace.
+## Still open with the founder
+
+1. **Tagline for the home hero.** Placeholder stands: *"Every pet service in Delhi NCR, in one place."* Approve or replace — it is one string and can change any time before launch.
+2. **Existing assets.** Is there a logo, colour or asset from the domain purchase that must be preserved? If yes, it changes the logo work above, not the token layer.

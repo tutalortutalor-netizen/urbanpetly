@@ -34,6 +34,7 @@ export const color = {
   accent: 'var(--color-accent)',
   accentSubtle: 'var(--color-accent-subtle)',
   accentFg: 'var(--color-accent-fg)',
+  accentStrong: 'var(--color-accent-strong)',
 
   success: 'var(--color-success)',
   successSubtle: 'var(--color-success-subtle)',

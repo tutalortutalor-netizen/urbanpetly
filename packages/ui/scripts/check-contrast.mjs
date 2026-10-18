@@ -4,8 +4,8 @@
  *
  * 1. Parses src/styles/tokens.css (the single source of raw values).
  * 2. Asserts every WCAG 2.1 AA pair the design system claims in
- *    docs/design/design-system.md §2.3 — for BOTH brand options.
- * 3. Asserts the combinations we forbid actually fail (white on accent).
+ *    docs/design/design-system.md §2.3.
+ * 3. Asserts the combinations we forbid actually fail (dark ink on the rose accent).
  * 4. Asserts the few numbers duplicated in src/tokens.ts and
  *    tailwind-preset.cjs still match the stylesheet.
  *
@@ -69,7 +69,6 @@ function declarationsFor(source, selectorPattern) {
 }
 
 const base = declarationsFor(css, /^:root$/);
-const brandB = { ...base, ...declarationsFor(css, /^\[data-brand="indigo-care"\]$/) };
 
 /** Follow `var(--x)` indirection down to a literal value. */
 function resolveVar(vars, token, seen = new Set()) {
@@ -120,6 +119,9 @@ const REQUIRED = [
   ['link text on surface', '--color-primary', '--color-surface', AA_TEXT],
   ['text on primary-subtle chip', '--color-primary-hover', '--color-primary-subtle', AA_TEXT],
   ['accent label on accent', '--color-accent-fg', '--color-accent', AA_TEXT],
+  ['accent ink on accent-subtle chip', '--color-accent-strong', '--color-accent-subtle', AA_TEXT],
+  ['accent ink on surface', '--color-accent-strong', '--color-surface', AA_TEXT],
+  ['accent fill on surface (rating stars)', '--color-accent', '--color-surface', AA_UI],
   ['success text on surface', '--color-success', '--color-surface', AA_TEXT],
   ['warning text on surface', '--color-warning', '--color-surface', AA_TEXT],
   ['danger text on surface', '--color-danger', '--color-surface', AA_TEXT],
@@ -137,20 +139,12 @@ const REQUIRED = [
 ];
 
 /**
- * Combinations a brand forbids: these MUST stay below AA, so that a well-meaning
- * "let's lighten the accent" never silently legalises an unreadable pairing.
- * Brand B deliberately has none — its accent is dark enough to carry white text,
- * which is why --color-accent-fg is overridden there.
+ * Combinations the design system forbids: these MUST stay below AA, so that a
+ * well-meaning "let's darken the label on the accent" never silently legalises an
+ * unreadable pairing. The rose accent carries white text, not dark ink — the
+ * opposite of what most of our surfaces do, so it is worth asserting.
  */
-const FORBIDDEN_BY_BRAND = {
-  A: [['white text on marigold accent', '--color-surface', '--color-accent', AA_TEXT]],
-  B: [],
-};
-
-const brands = [
-  ['A', 'A (marigold, default)', base],
-  ['B', 'B (indigo-care)', brandB],
-];
+const FORBIDDEN = [['dark ink on rose accent', '--color-fg', '--color-accent', AA_TEXT]];
 
 let failures = 0;
 const fail = (msg) => {
@@ -158,43 +152,41 @@ const fail = (msg) => {
   console.error(`  FAIL  ${msg}`);
 };
 
-for (const [brandKey, brandName, vars] of brands) {
-  console.log(`\nBrand ${brandName}`);
+console.log('\nBrand "Indigo Care"');
 
-  for (const [label, fgToken, bgToken, min] of REQUIRED) {
-    try {
-      const ratio = contrast(resolveVar(vars, fgToken), resolveVar(vars, bgToken));
-      if (ratio + 1e-9 < min) {
-        fail(`${label}: ${ratio.toFixed(2)}:1 < required ${min}:1`);
-      } else {
-        console.log(`  ok    ${ratio.toFixed(2).padStart(5)}:1  ${label}`);
-      }
-    } catch (error) {
-      fail(`${label}: ${error.message}`);
+for (const [label, fgToken, bgToken, min] of REQUIRED) {
+  try {
+    const ratio = contrast(resolveVar(base, fgToken), resolveVar(base, bgToken));
+    if (ratio + 1e-9 < min) {
+      fail(`${label}: ${ratio.toFixed(2)}:1 < required ${min}:1`);
+    } else {
+      console.log(`  ok    ${ratio.toFixed(2).padStart(5)}:1  ${label}`);
     }
+  } catch (error) {
+    fail(`${label}: ${error.message}`);
   }
+}
 
-  for (const [label, fgToken, bgToken, min] of FORBIDDEN_BY_BRAND[brandKey]) {
-    try {
-      const ratio = contrast(resolveVar(vars, fgToken), resolveVar(vars, bgToken));
-      if (ratio >= min) {
-        fail(`${label}: ${ratio.toFixed(2)}:1 now passes — the docs say it must not be used; update design-system.md §2.3`);
-      } else {
-        console.log(`  ok    ${ratio.toFixed(2).padStart(5)}:1  ${label} (correctly below AA, must not be used)`);
-      }
-    } catch (error) {
-      fail(`${label}: ${error.message}`);
+for (const [label, fgToken, bgToken, min] of FORBIDDEN) {
+  try {
+    const ratio = contrast(resolveVar(base, fgToken), resolveVar(base, bgToken));
+    if (ratio >= min) {
+      fail(`${label}: ${ratio.toFixed(2)}:1 now passes — the docs say it must not be used; update design-system.md §2.3`);
+    } else {
+      console.log(`  ok    ${ratio.toFixed(2).padStart(5)}:1  ${label} (correctly below AA, must not be used)`);
     }
+  } catch (error) {
+    fail(`${label}: ${error.message}`);
   }
+}
 
-  // Every semantic colour must resolve to a usable literal, so a typo fails CI.
-  for (const token of Object.keys(vars)) {
-    if (!token.startsWith('--color-') || token === '--color-overlay') continue;
-    try {
-      luminance(resolveVar(vars, token));
-    } catch (error) {
-      fail(`${token} does not resolve to a hex colour (${error.message})`);
-    }
+// Every semantic colour must resolve to a usable literal, so a typo fails CI.
+for (const token of Object.keys(base)) {
+  if (!token.startsWith('--color-') || token === '--color-overlay') continue;
+  try {
+    luminance(resolveVar(base, token));
+  } catch (error) {
+    fail(`${token} does not resolve to a hex colour (${error.message})`);
   }
 }
 

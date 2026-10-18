@@ -7,7 +7,7 @@ guessing (`docs/README.md` rule 1).
 | Document | What it answers |
 |---|---|
 | [design-system.md](design-system.md) | Tokens, colour with verified contrast, type, spacing, layout, radius, elevation, motion, interaction states, accessibility baseline, voice and copy formats |
-| [brand-direction.md](brand-direction.md) | Two brand options for the founder to choose between — **decision pending** |
+| [brand-direction.md](brand-direction.md) | The brand — **"Indigo Care", decided 2026-10-18** — and the alternative that was rejected |
 | [component-inventory.md](component-inventory.md) | Every component: anatomy, props, all states, responsive behaviour, a11y, build order |
 | [core-flows.md](core-flows.md) | The three core flows end to end, plus the provider and admin screens they touch |
 | [home.md](home.md) | Home / city landing |
@@ -30,5 +30,8 @@ live in git, diff in a pull request and never go stale in a design tool nobody c
 
 ## Open with the Product Owner / founder
 
-1. Brand option A or B (and the home tagline) — [brand-direction.md](brand-direction.md).
-2. Nothing else is blocking; assumptions made in these specs are stated inline where they occur.
+1. The home hero tagline — placeholder stands, see [home.md](home.md) copy table.
+2. Whether any logo or colour from the domain purchase must be preserved — affects the logo SVG only, not the tokens.
+3. Nothing is blocking; assumptions made in these specs are stated inline where they occur.
+
+The brand question is **closed**: "Indigo Care", wordmark `UrbanPetly` — [brand-direction.md](brand-direction.md).

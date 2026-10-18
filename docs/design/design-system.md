@@ -3,14 +3,14 @@
 Owner: UI/UX Designer. Status: v0.1 (2026-10-18), Phase 0. Source of truth for every visual decision.
 Implementation lives in `packages/ui` (`src/tokens.ts`, `src/styles/tokens.css`, `tailwind-preset.cjs`).
 
-> **Brand palette status: PROVISIONAL.** Tokens currently ship **Brand Option A ("Marigold")**.
-> The founder picks A or B in [brand-direction.md](brand-direction.md). Switching is a
-> values-only change in `tokens.css` — no component, class name or screen spec changes.
+> **Brand: "Indigo Care", chosen by the founder on 2026-10-18** (Paperclip SAM-7).
+> The decision and the rejected alternative are recorded in [brand-direction.md](brand-direction.md).
+> Wordmark is **`UrbanPetly`**, capitalised.
 
 ## 1. How tokens are layered
 
 ```
-primitive tokens      --up-teal-600, --up-sand-200, --up-marigold-500
+primitive tokens      --up-indigo-600, --up-slate-200, --up-rose-500
   (raw palette, never used directly in app code)
         v
 semantic tokens       --color-primary, --color-fg-muted, --color-border-strong
@@ -27,46 +27,49 @@ Rules:
 
 ## 2. Colour
 
-### 2.1 Primitives — Option A "Marigold" (provisional default)
+### 2.1 Primitives — "Indigo Care"
 
 | Ramp | 50 | 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| `teal` (brand) | `#ECFAF6` | `#D1F2E9` | `#A6E5D4` | `#6FD1BA` | `#39B69B` | `#159B80` | `#0E7C66` | `#0B6353` | `#0A4E43` | `#093F37` |
-| `marigold` (accent) | `#FFF8EB` | `#FEEFC7` | `#FDDF8A` | `#FCC74D` | `#FAB023` | `#F59E0B` | `#D97706` | `#B45309` | — | — |
-| `sand` (warm neutral) | `#FAF9F7` | `#F5F3F0` | `#E9E5E0` | `#D6D1CA` | `#948D84` | `#78716A` | `#57534E` | `#44403C` | `#292524` | `#1C1917` |
+| `indigo` (brand) | `#EEF2FF` | `#E0E7FF` | `#C7D2FE` | `#A5B4FC` | `#818CF8` | `#6366F1` | `#4F46E5` | `#4338CA` | `#3730A3` | `#312E81` |
+| `rose` (accent) | `#FFF1F2` | `#FFE4E6` | `#FECDD3` | `#FDA4AF` | `#FB7185` | `#E11D48` | `#BE123C` | `#9F1239` | — | — |
+| `slate` (cool neutral) | `#F8FAFC` | `#F1F5F9` | `#E2E8F0` | `#CBD5E1` | `#94A3B8` | `#64748B` | `#475569` | `#334155` | `#1E293B` | `#0F172A` |
 
-In CSS the ramps are named by **role**, not hue — `--up-brand-*`, `--up-accent-*`, `--up-neutral-*` — so switching brand replaces values only, never names.
+In CSS the ramps are named by **role**, not hue — `--up-brand-*`, `--up-accent-*`, `--up-neutral-*` — so a future brand change replaces values only, never names.
+
+`slate-400` (`#94A3B8`) is **2.56:1 on white and fails WCAG 1.4.11**. It is decorative only; interactive borders use `slate-500`. The contrast guard fails the build if `--color-border-strong` is ever repointed at it.
 
 Status primitives: success `#15803D` / subtle `#ECFDF3` / fg `#166534` · warning `#B45309` / subtle `#FFF8EB` / fg `#854D0E` · danger `#DC2626` / subtle `#FEF2F2` / fg `#991B1B` · info `#0369A1` / subtle `#EFF8FF` / fg `#075985`.
 
 ### 2.2 Semantic tokens
 
-| Token | Value (Option A) | Use |
+| Token | Value | Use |
 |---|---|---|
-| `--color-bg` | `sand-50` | Page background |
+| `--color-bg` | `slate-50` | Page background |
 | `--color-surface` | `#FFFFFF` | Cards, sheets, inputs |
-| `--color-surface-sunken` | `sand-100` | Inset areas, skeletons, disabled fields |
+| `--color-surface-sunken` | `slate-100` | Inset areas, skeletons, disabled fields |
 | `--color-surface-raised` | `#FFFFFF` + `--shadow-md` | Modals, popovers, sticky bars |
-| `--color-overlay` | `rgba(28,25,23,0.56)` | Scrim behind modal/sheet |
-| `--color-fg` | `sand-900` | Body and heading text |
-| `--color-fg-muted` | `sand-600` | Secondary text, labels, metadata |
-| `--color-fg-subtle` | `sand-500` | Placeholder, disabled text, icon-only decoration |
-| `--color-fg-inverse` | `sand-50` | Text on dark surfaces |
-| `--color-border` | `sand-300` | Decorative dividers, card outlines |
-| `--color-border-strong` | `sand-400` | **Interactive** control borders (inputs, checkbox, unselected chip) |
-| `--color-primary` | `teal-600` | Primary action fill, active nav, links |
-| `--color-primary-hover` | `teal-700` | Hover |
-| `--color-primary-active` | `teal-800` | Pressed |
-| `--color-primary-subtle` | `teal-50` | Selected chip background, info banner |
+| `--color-overlay` | `rgba(15,23,42,0.56)` | Scrim behind modal/sheet |
+| `--color-fg` | `slate-900` | Body and heading text |
+| `--color-fg-muted` | `slate-600` | Secondary text, labels, metadata |
+| `--color-fg-subtle` | `slate-500` | Placeholder, disabled text, icon-only decoration |
+| `--color-fg-inverse` | `slate-50` | Text on dark surfaces |
+| `--color-border` | `slate-300` | Decorative dividers, card outlines |
+| `--color-border-strong` | `slate-500` | **Interactive** control borders (inputs, checkbox, unselected chip) |
+| `--color-primary` | `indigo-600` | Primary action fill, active nav, links |
+| `--color-primary-hover` | `indigo-700` | Hover |
+| `--color-primary-active` | `indigo-800` | Pressed |
+| `--color-primary-subtle` | `indigo-50` | Selected chip background, info banner |
 | `--color-primary-fg` | `#FFFFFF` | Text/icon on `--color-primary` |
-| `--color-accent` | `marigold-500` | Badges, ratings, highlight bars, "Verified" |
-| `--color-accent-subtle` | `marigold-50` | Accent chip background |
-| `--color-accent-fg` | `sand-900` | **Ink** on accent. Never white — see §2.3 |
+| `--color-accent` | `rose-500` (`#E11D48`) | Rating stars, "Featured" ribbon, selected map-pin ring |
+| `--color-accent-subtle` | `rose-50` | Accent chip background |
+| `--color-accent-fg` | `#FFFFFF` | **White** on the accent *fill*. Never dark ink — see §2.3 |
+| `--color-accent-strong` | `rose-700` (`#9F1239`) | Accent **ink** — text and icons on `accent-subtle` or on `surface` |
 | `--color-success` / `-subtle` / `-fg` | `#15803D` / `#ECFDF3` / `#166534` | Accepted, open now, saved |
 | `--color-warning` / `-subtle` / `-fg` | `#B45309` / `#FFF8EB` / `#854D0E` | Pending, closing soon, unclaimed |
 | `--color-danger` / `-subtle` / `-fg` | `#DC2626` / `#FEF2F2` / `#991B1B` | Errors, declined, destructive |
 | `--color-info` / `-subtle` / `-fg` | `#0369A1` / `#EFF8FF` / `#075985` | Neutral system messages |
-| `--color-focus-ring` | `teal-600` | Focus indicator (see §9) |
+| `--color-focus-ring` | `indigo-600` | Focus indicator (see §9) |
 
 ### 2.3 Verified contrast (WCAG 2.1 AA)
 
@@ -74,30 +77,36 @@ Measured, not assumed. Text needs 4.5:1 (3:1 for ≥24px or ≥19px bold); UI bo
 
 | Pair | Ratio | Verdict |
 |---|---|---|
-| `fg` on `surface` (`#1C1917`/`#FFFFFF`) | 17.49 | AAA |
-| `fg` on `bg` (`#1C1917`/`#FAF9F7`) | 16.62 | AAA |
-| `fg-muted` on `surface` (`#57534E`) | 7.63 | AAA |
-| `fg-subtle` on `surface` (`#78716A`) | 4.81 | AA — placeholders/disabled only |
-| `primary-fg` on `primary` (white/`#0E7C66`) | 5.13 | AA |
-| `primary` on `surface` (link text) | 5.13 | AA |
-| white on `primary-hover` (`#0B6353`) | 7.18 | AAA |
-| `accent-fg` on `accent` (`#1C1917`/`#F59E0B`) | 8.14 | AAA |
-| **white on `accent`** | **2.15** | **FAIL — forbidden combination** |
+| `fg` on `surface` (`#0F172A`/`#FFFFFF`) | 17.85 | AAA |
+| `fg` on `bg` (`#0F172A`/`#F8FAFC`) | 17.06 | AAA |
+| `fg-muted` on `surface` (`#475569`) | 7.58 | AAA |
+| `fg-subtle` on `surface` (`#64748B`) | 4.76 | AA — placeholders/disabled only |
+| `primary-fg` on `primary` (white/`#4F46E5`) | 6.29 | AA |
+| `primary` on `surface` (link text) | 6.29 | AA |
+| white on `primary-hover` (`#4338CA`) | 7.90 | AAA |
+| white on `primary-active` (`#3730A3`) | 9.93 | AAA |
+| `accent-fg` on `accent` (white/`#E11D48`) | 4.70 | AA |
+| **`fg` on `accent`** (dark ink on rose) | **3.80** | **FAIL — forbidden combination** |
+| `accent-strong` on `accent-subtle` (`#9F1239`/`#FFF1F2`) | 7.30 | AAA |
+| `accent-strong` on `surface` | 8.02 | AAA |
+| `accent` on `surface` (rating stars, non-text) | 4.70 | AA (1.4.11) |
+| **`accent-fg` on `accent-subtle`** (white on rose-50) | **1.10** | **FAIL — use `accent-strong` for ink on a subtle chip** |
 | `success` on `surface` | 5.02 | AA |
 | `danger` on `surface` (and white on `danger`) | 4.83 | AA |
 | `info` on `surface` | 5.93 | AA |
 | `warning-700` on `surface` (`#B45309`) | 5.02 | AA |
 | status `-fg` on matching `-subtle` (4 pairs) | 6.49–7.60 | AAA |
-| `border-strong` on `surface` (`#948D84`) | 3.28 | AA (1.4.11) |
-| `border` on `surface` (`#D6D1CA`) | 1.52 | Decorative only — never the sole indicator of a control |
-| `focus-ring` on `surface` / on `bg` | 5.13 / 4.88 | AA (1.4.11) |
-| `marigold-300` on `sand-900` (dark focus ring) | 11.17 | AAA |
+| `border-strong` on `surface` (`#64748B`) | 4.76 | AA (1.4.11) |
+| `border` on `surface` (`#CBD5E1`) | 1.48 | Decorative only — never the sole indicator of a control |
+| `focus-ring` on `surface` / `bg` / `surface-sunken` | 6.29 / 6.01 / 5.74 | AA (1.4.11) |
+| `indigo-300` on `slate-900` (dark focus ring) | 8.96 | AAA |
 
-These numbers are not hand-maintained. `packages/ui/scripts/check-contrast.mjs` parses `tokens.css`, resolves each semantic token to its literal, and fails the build if any required pair drops below its threshold **or if a forbidden pair starts passing** — for both brand options. Run it with `pnpm --filter @urbanpetly/ui check:tokens`; CI runs it on every PR.
+These numbers are not hand-maintained. `packages/ui/scripts/check-contrast.mjs` parses `tokens.css`, resolves each semantic token to its literal, and fails the build if any required pair drops below its threshold **or if a forbidden pair starts passing**. Run it with `pnpm --filter @urbanpetly/ui check:tokens`; CI runs it on every PR.
 
 ### 2.4 Colour rules
 - Colour is never the only carrier of meaning: status chips pair colour with a label and an icon; map pins pair colour with a shape.
-- Marigold is a **highlight**, not an action colour. Primary buttons are teal. Marigold appears in: rating stars, "Verified" badge, featured ribbon, empty-state illustration.
+- Rose is a **highlight**, not an action colour. Primary buttons are indigo. Rose appears in: rating stars, the "Featured" badge, the selected map-pin ring, empty-state illustration. The **"Verified" badge is `success`, not accent** (`component-inventory.md` §10) — trust reads green, and it must not be confused with the featured/paid highlight.
+- **Rose (`#E11D48`) and danger (`#DC2626`) are neighbouring hues.** Treat this as a real risk, not a theoretical one: accent never carries an interactive or destructive meaning, errors always pair `danger` with an icon and a message, and the two never sit adjacent in the same component. If a screen needs both at once, drop the accent.
 - Destructive actions use `danger` and always require confirmation (`Modal`), per `06-nfr.md`.
 - Dark mode is **out of scope for v1** but every token is a CSS variable, so a `[data-theme="dark"]` block is a later additive change.
 
@@ -115,7 +124,9 @@ These numbers are not hand-maintained. `packages/ui/scripts/check-contrast.mjs` 
 | `--text-caption` | body | 12 / 16 | 12 / 16 | 500 | Chips, badges, timestamps |
 | `--text-price` | body | 16 / 24 | 16 / 24 | 600 | Prices — `font-variant-numeric: tabular-nums` |
 
-Families (Option A): heading `"Plus Jakarta Sans", system-ui, sans-serif`; body `"Inter", system-ui, sans-serif`.
+Families: heading `"Outfit", system-ui, sans-serif` (600); body `"Inter", system-ui, sans-serif` (400/500).
+
+Outfit has no Devanagari sibling. When the Hindi release lands, headings fall back to `"Noto Sans Devanagari"` for Devanagari text — so never rely on the heading face to carry brand meaning on its own, and keep the wordmark as an SVG asset rather than live text.
 
 Rules:
 - **Never below 12px.** Body copy never below 14px. Base rem = 16px; sizes in `rem` so browser zoom works.
@@ -150,16 +161,16 @@ Conventions: screen gutter `4` (16px) at 360px, `6` (24px) ≥768px. Card paddin
 
 ## 6. Radius, elevation, borders
 
-| Radius | `sm` 6px | `md` 10px | `lg` 14px | `xl` 20px | `pill` 9999px |
+| Radius | `sm` 6px | `md` 12px | `lg` 16px | `xl` 24px | `pill` 9999px |
 |---|---|---|---|---|---|
 | Used by | Chips, badges, small inputs | Buttons, inputs, selects | Cards, images | Sheets, modals | Chips, avatars, filter pills |
 
 | Shadow | Value | Use |
 |---|---|---|
-| `xs` | `0 1px 2px rgba(28,25,23,0.06)` | Resting card |
-| `sm` | `0 2px 6px rgba(28,25,23,0.08)` | Hover card, sticky header on scroll |
-| `md` | `0 8px 20px rgba(28,25,23,0.10)` | Popover, dropdown, map mini-card |
-| `lg` | `0 16px 36px rgba(28,25,23,0.14)` | Modal, bottom sheet |
+| `xs` | `0 1px 2px rgba(15,23,42,0.06)` | Resting card |
+| `sm` | `0 2px 6px rgba(15,23,42,0.08)` | Hover card, sticky header on scroll |
+| `md` | `0 8px 20px rgba(15,23,42,0.10)` | Popover, dropdown, map mini-card |
+| `lg` | `0 16px 36px rgba(15,23,42,0.14)` | Modal, bottom sheet |
 
 Elevation is shadow + surface, never a different brand colour. Default border is `1px solid var(--color-border)`; interactive controls use `--color-border-strong` so they meet 3:1.
 
@@ -189,7 +200,7 @@ Every interactive component must specify all of: **default, hover, focus-visible
 | State | Rule |
 |---|---|
 | Hover | Only on `@media (hover: hover)`. Background steps one shade; never move layout. |
-| **Focus** | `outline: 3px solid var(--color-focus-ring); outline-offset: 2px;` on `:focus-visible`. **Never** `outline: none` without an equally visible replacement. Focus is visible on every background (verified 4.88–5.13:1). |
+| **Focus** | `outline: 3px solid var(--color-focus-ring); outline-offset: 2px;` on `:focus-visible`. **Never** `outline: none` without an equally visible replacement. Focus is visible on every background (verified 5.74–6.29:1). |
 | Active | `--color-primary-active`; optional `transform: scale(0.98)` within reduced-motion rules. |
 | Disabled | `--color-surface-sunken` background, `--color-fg-subtle` text, `cursor: not-allowed`, `aria-disabled="true"`. Prefer *enabled + explain the error* over disabling a submit button. |
 | Loading | Keep the element's size (no layout shift), show a spinner, set `aria-busy="true"`, and announce via `aria-live="polite"`. Buttons keep their label and add the spinner before it. |
@@ -238,7 +249,7 @@ Formats: price `₹800` (no decimals, tabular numerals, "Starts at ₹800" for a
 
 | Doc | Contents |
 |---|---|
-| [brand-direction.md](brand-direction.md) | Two brand options awaiting the founder's decision |
+| [brand-direction.md](brand-direction.md) | The brand decision ("Indigo Care") and the rejected alternative |
 | [component-inventory.md](component-inventory.md) | Every component: anatomy, props, states, a11y |
 | [core-flows.md](core-flows.md) | The three prototyped end-to-end flows |
 | [home.md](home.md) · [search-listing.md](search-listing.md) · [provider-profile.md](provider-profile.md) · [request-flow.md](request-flow.md) | Screen specs |

@@ -131,7 +131,7 @@ Static status marker, 24px tall, radius `sm`, `--text-caption` 500, icon + text 
 | At provider | `surface-sunken` / `fg-muted` + storefront | "At centre" |
 | Open now | `success-subtle` / `success-fg` + dot | "Open now" |
 | Closed | `surface-sunken` / `fg-muted` | "Closed · Opens 9 am" |
-| Featured | `accent-subtle` / `accent-fg` + star | "Featured" |
+| Featured | `accent-subtle` / `accent-strong` + star | "Featured" |
 
 Request-status badges reuse the same shapes: Pending `warning`, Accepted `success`, Declined `danger`, Expired/Cancelled neutral, Completed `info`.
 

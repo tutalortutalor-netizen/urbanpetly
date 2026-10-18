@@ -54,6 +54,7 @@ module.exports = {
         DEFAULT: 'var(--color-accent)',
         subtle: 'var(--color-accent-subtle)',
         fg: 'var(--color-accent-fg)',
+        strong: 'var(--color-accent-strong)',
       },
 
       success: {

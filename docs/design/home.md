@@ -23,7 +23,7 @@ flowchart TD
 
 ```
 +------------------------------------------+
-| ☰   urbanpetly            [Sign in]      |  sticky header, 56px
+| ☰   UrbanPetly            [Sign in]      |  sticky header, 56px
 | 📍 Gurgaon · Sector 56            (edit) |  location row, 44px, tappable
 +------------------------------------------+
 |                                          |
@@ -84,7 +84,7 @@ flowchart TD
 
 **How it works.** Three steps, static, no illustrations needed at launch. Reassurance line under it: "Free for pet parents. No payment on UrbanPetly."
 
-**List your business.** `accent-subtle` panel, secondary button → `provider.urbanpetly.com`. External link gets no `target="_blank"` (keeps the back button working).
+**List your business.** `accent-subtle` panel with `accent-strong` ink (never `accent-fg` — that is white, for the solid accent fill only), secondary button → `provider.urbanpetly.com`. External link gets no `target="_blank"` (keeps the back button working).
 
 ## States
 

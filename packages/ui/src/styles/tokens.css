@@ -2,8 +2,8 @@
  * UrbanPetly design tokens — the single source of truth for raw values.
  *
  * Docs: docs/design/design-system.md
- * Brand: Option A "Marigold" is the PROVISIONAL default. Switching to Option B is a
- *        values-only change in the primitive block below (see docs/design/brand-direction.md).
+ * Brand: "Indigo Care" — chosen by the founder on 2026-10-18 (Paperclip SAM-7).
+ *        The rejected alternative is kept for the record in docs/design/brand-direction.md.
  *
  * Primitive ramps are named by ROLE (brand / accent / neutral), not by hue, so a brand
  * change never touches a variable name, a component or a utility class.
@@ -12,40 +12,40 @@
 
 :root {
   /* ----------------------------------------------------------------------
-   * Primitives — Brand Option A "Marigold"
-   * brand = teal, accent = marigold, neutral = warm sand
+   * Primitives — "Indigo Care"
+   * brand = indigo, accent = rose, neutral = cool slate
    * -------------------------------------------------------------------- */
-  --up-brand-50: #ecfaf6;
-  --up-brand-100: #d1f2e9;
-  --up-brand-200: #a6e5d4;
-  --up-brand-300: #6fd1ba;
-  --up-brand-400: #39b69b;
-  --up-brand-500: #159b80;
-  --up-brand-600: #0e7c66;
-  --up-brand-700: #0b6353;
-  --up-brand-800: #0a4e43;
-  --up-brand-900: #093f37;
+  --up-brand-50: #eef2ff;
+  --up-brand-100: #e0e7ff;
+  --up-brand-200: #c7d2fe;
+  --up-brand-300: #a5b4fc;
+  --up-brand-400: #818cf8;
+  --up-brand-500: #6366f1;
+  --up-brand-600: #4f46e5;
+  --up-brand-700: #4338ca;
+  --up-brand-800: #3730a3;
+  --up-brand-900: #312e81;
 
-  --up-accent-50: #fff8eb;
-  --up-accent-100: #feefc7;
-  --up-accent-200: #fddf8a;
-  --up-accent-300: #fcc74d;
-  --up-accent-400: #fab023;
-  --up-accent-500: #f59e0b;
-  --up-accent-600: #d97706;
-  --up-accent-700: #b45309;
+  --up-accent-50: #fff1f2;
+  --up-accent-100: #ffe4e6;
+  --up-accent-200: #fecdd3;
+  --up-accent-300: #fda4af;
+  --up-accent-400: #fb7185;
+  --up-accent-500: #e11d48;
+  --up-accent-600: #be123c;
+  --up-accent-700: #9f1239;
 
   --up-neutral-0: #ffffff;
-  --up-neutral-50: #faf9f7;
-  --up-neutral-100: #f5f3f0;
-  --up-neutral-200: #e9e5e0;
-  --up-neutral-300: #d6d1ca;
-  --up-neutral-400: #948d84; /* 3.28:1 on white — interactive borders (WCAG 1.4.11) */
-  --up-neutral-500: #78716a;
-  --up-neutral-600: #57534e;
-  --up-neutral-700: #44403c;
-  --up-neutral-800: #292524;
-  --up-neutral-900: #1c1917;
+  --up-neutral-50: #f8fafc;
+  --up-neutral-100: #f1f5f9;
+  --up-neutral-200: #e2e8f0;
+  --up-neutral-300: #cbd5e1;
+  --up-neutral-400: #94a3b8; /* 2.56:1 — DECORATIVE ONLY, never an interactive border */
+  --up-neutral-500: #64748b; /* 4.76:1 on white — interactive borders (WCAG 1.4.11) */
+  --up-neutral-600: #475569;
+  --up-neutral-700: #334155;
+  --up-neutral-800: #1e293b;
+  --up-neutral-900: #0f172a;
 
   --up-success-500: #15803d;
   --up-success-50: #ecfdf3;
@@ -67,7 +67,7 @@
   --color-surface: var(--up-neutral-0);
   --color-surface-sunken: var(--up-neutral-100);
   --color-surface-raised: var(--up-neutral-0);
-  --color-overlay: rgb(28 25 23 / 56%);
+  --color-overlay: rgb(15 23 42 / 56%);
 
   --color-fg: var(--up-neutral-900);
   --color-fg-muted: var(--up-neutral-600);
@@ -75,7 +75,7 @@
   --color-fg-inverse: var(--up-neutral-50);
 
   --color-border: var(--up-neutral-300); /* decorative only */
-  --color-border-strong: var(--up-neutral-400); /* interactive controls */
+  --color-border-strong: var(--up-neutral-500); /* interactive controls — must stay >=3:1 */
 
   --color-primary: var(--up-brand-600);
   --color-primary-hover: var(--up-brand-700);
@@ -85,7 +85,8 @@
 
   --color-accent: var(--up-accent-500);
   --color-accent-subtle: var(--up-accent-50);
-  --color-accent-fg: var(--up-neutral-900); /* never white on accent — 2.15:1 */
+  --color-accent-fg: var(--up-neutral-0); /* white on rose-600 = 4.70:1; dark ink is 3.80:1 and fails */
+  --color-accent-strong: var(--up-accent-700); /* accent ink ON accent-subtle — 7.30:1 */
 
   --color-success: var(--up-success-500);
   --color-success-subtle: var(--up-success-50);
@@ -105,7 +106,7 @@
   /* ----------------------------------------------------------------------
    * Typography
    * -------------------------------------------------------------------- */
-  --font-heading: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-heading: "Outfit", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", monospace;
 
@@ -146,15 +147,15 @@
    * Radius, elevation
    * -------------------------------------------------------------------- */
   --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 20px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
   --radius-pill: 9999px;
 
-  --shadow-xs: 0 1px 2px rgb(28 25 23 / 6%);
-  --shadow-sm: 0 2px 6px rgb(28 25 23 / 8%);
-  --shadow-md: 0 8px 20px rgb(28 25 23 / 10%);
-  --shadow-lg: 0 16px 36px rgb(28 25 23 / 14%);
+  --shadow-xs: 0 1px 2px rgb(15 23 42 / 6%);
+  --shadow-sm: 0 2px 6px rgb(15 23 42 / 8%);
+  --shadow-md: 0 8px 20px rgb(15 23 42 / 10%);
+  --shadow-lg: 0 16px 36px rgb(15 23 42 / 14%);
 
   /* ----------------------------------------------------------------------
    * Motion
@@ -179,59 +180,6 @@
 
   /* Minimum interactive target (05-ux-spec: 44px) */
   --target-min: 44px;
-}
-
-/**
- * Brand Option B "Indigo Care" — apply with <html data-brand="indigo-care">.
- * Values only; every semantic token above resolves through these primitives.
- * Delete this block once the founder's choice is locked in.
- */
-[data-brand="indigo-care"] {
-  --up-brand-50: #eef2ff;
-  --up-brand-100: #e0e7ff;
-  --up-brand-200: #c7d2fe;
-  --up-brand-300: #a5b4fc;
-  --up-brand-400: #818cf8;
-  --up-brand-500: #6366f1;
-  --up-brand-600: #4f46e5;
-  --up-brand-700: #4338ca;
-  --up-brand-800: #3730a3;
-  --up-brand-900: #312e81;
-
-  --up-accent-50: #fff1f2;
-  --up-accent-100: #ffe4e6;
-  --up-accent-200: #fecdd3;
-  --up-accent-300: #fda4af;
-  --up-accent-400: #fb7185;
-  --up-accent-500: #e11d48;
-  --up-accent-600: #be123c;
-  --up-accent-700: #9f1239;
-
-  --up-neutral-50: #f8fafc;
-  --up-neutral-100: #f1f5f9;
-  --up-neutral-200: #e2e8f0;
-  --up-neutral-300: #cbd5e1;
-  /* 400 intentionally equals 500: slate-400 (#94a3b8) is 2.56:1 and fails 1.4.11 */
-  --up-neutral-400: #64748b; /* 4.76:1 on white */
-  --up-neutral-500: #64748b;
-  --up-neutral-600: #475569;
-  --up-neutral-700: #334155;
-  --up-neutral-800: #1e293b;
-  --up-neutral-900: #0f172a;
-
-  --color-accent-fg: var(--up-neutral-0); /* white on rose-600 = 4.70:1 */
-  --color-overlay: rgb(15 23 42 / 56%);
-
-  --font-heading: "Outfit", system-ui, -apple-system, "Segoe UI", sans-serif;
-
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
-
-  --shadow-xs: 0 1px 2px rgb(15 23 42 / 6%);
-  --shadow-sm: 0 2px 6px rgb(15 23 42 / 8%);
-  --shadow-md: 0 8px 20px rgb(15 23 42 / 10%);
-  --shadow-lg: 0 16px 36px rgb(15 23 42 / 14%);
 }
 
 /* Wider type scale from the md breakpoint (768px) — see design-system.md §3 */
