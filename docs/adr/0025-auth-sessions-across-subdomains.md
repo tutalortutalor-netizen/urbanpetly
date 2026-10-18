@@ -128,6 +128,41 @@ family. If an **already-used** token is presented, that means the token leaked: 
 entire session family, logs a security event, and returns 401. Rotation without reuse detection
 detects nothing, so these ship together or not at all.
 
+#### Concurrent refresh: the reuse grace window
+
+Naive reuse detection logs users out during ordinary browsing. The access token is memory-only, so
+`/auth/refresh` runs on **every page load**; opening three search results in new tabs, or restoring a
+window with N tabs, issues N simultaneous refreshes presenting the same cookie. One wins and rotates;
+the others arrive holding a token that is now already-used, and the rule above revokes the whole
+family. Every tab is logged out and a security event is logged, from a user doing nothing unusual.
+The client-side de-duplication below does not fix this on its own: it is a module-scoped variable, so
+it is scoped to one document and two tabs cannot see each other.
+
+So reuse detection carries a **grace window**, and this is a deliberate change to its semantics
+rather than an implementation detail:
+
+- If a used token is presented **within 30 seconds of its own rotation**, and the successor it
+  rotated into is itself still unused and not revoked, the API returns **that same successor** —
+  re-setting the identical cookie and minting a fresh access token — instead of revoking. No new
+  rotation happens, so N racing tabs converge on one token rather than chaining N rotations.
+- Outside the window, or if the successor has itself already been used or the family revoked, this is
+  revocation as designed: kill the family, log the security event, return 401.
+- Replays inside the window are logged at `info` with the family id. A family showing a sustained
+  pattern of them is not normal tab behaviour and is worth alerting on.
+
+30 seconds is chosen to cover tab-restore storms and slow mobile connections while staying far below
+any realistic window for an attacker to use a stolen token and have the victim's next page load
+notice. The trade is explicit: a token stolen and replayed **within** 30 s of its rotation returns the
+successor rather than tripping detection. Detection still fires on the attacker's *next* refresh, and
+the alternative — logging users out for opening tabs — would get reuse detection switched off
+entirely, which is strictly worse.
+
+Client-side, refreshes are additionally serialised **across** tabs with the Web Locks API
+(`navigator.locks.request('auth-refresh', …)`), falling back to a `BroadcastChannel` election where
+Web Locks is unavailable. That keeps the normal case to a single refresh. It is an optimisation, not
+the guarantee: it does not hold across browser profiles, container tabs, or private windows, which is
+why the grace window is what actually carries the correctness.
+
 ### CORS
 
 ```
@@ -181,19 +216,27 @@ So, additionally: a Docker Compose profile serving the apps over HTTPS on `*.lvh
 locally-trusted certificates (mkcert), mirroring the production origin layout. **Any PR touching
 auth, cookies or CORS must be exercised against that profile**, and CI asserts the concrete
 `Set-Cookie` attributes and CORS headers on the auth routes so a regression fails the build rather
-than staging. (`__Host-` needs `Secure`; browsers treat `http://localhost` as a secure context, but
+than staging. CI must also assert the **rejection** path: each of the three cookie-authenticated
+endpoints returns 403 with an absent `Origin` and with a forged one. Since we rely on that check
+instead of a CSRF token, it is the control that most needs a test proving it is still wired up. The
+concurrent-refresh case gets a test too — N simultaneous refreshes with one cookie return a usable
+session and leave the family unrevoked, while the same token replayed after the grace window revokes
+it. (`__Host-` needs `Secure`; browsers treat `http://localhost` as a secure context, but
 the `lvh.me` profile uses real HTTPS and avoids depending on that.)
 
 ## Consequences
 
 - `packages/api-client` sets `credentials: 'include'` on every request and holds the access token in
   a module-scoped variable with a single refresh-on-401 interceptor that de-duplicates concurrent
-  refreshes. Three parallel 401s must trigger one refresh, not three — three would trip reuse
-  detection and log the user out.
+  refreshes **within** the document, and a Web Locks / `BroadcastChannel` lock that serialises them
+  **across** tabs. Three parallel 401s must trigger one refresh, not three.
 - No shared sign-in between the three apps. The UX spec should not promise one.
-- The `refresh_tokens` table needs `session_family_id`, `used_at` and `revoked_at` to support
-  rotation and reuse detection — [03-data-model.md](../03-data-model.md) to be updated when
-  implemented.
+- The `refresh_tokens` table needs `session_family_id`, `used_at`, `revoked_at` and a
+  `rotated_to_id` pointer to the successor token, which is what makes the grace window servable —
+  [03-data-model.md](../03-data-model.md) to be updated when implemented.
+- The `Origin` check is a **single shared `preHandler`** registered on the cookie-authenticated route
+  group, not copied into each of the three handlers. A fourth cookie-authenticated endpoint added
+  later is exactly how a per-route copy fails, and it would fail open.
 - `/auth/refresh` is called on every page load, so it must be fast and must not be rate-limited in a
   way that breaks normal multi-tab use.
 - Adding any new browser origin is a config change plus an ADR check against the same-site

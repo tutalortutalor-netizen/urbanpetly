@@ -23,7 +23,7 @@ Pet parents find, compare and contact providers; providers get a listing and lea
 | 08 | [Delivery plan](08-delivery-plan.md) | Phases, milestones, agent ownership |
 | 09 | [Decisions and open questions](09-decisions-and-open-questions.md) | ADR log, pending items |
 | 10 | [Git workflow and review policy](10-git-workflow.md) | Feature branches, PRs, review chain (mandatory) |
-| - | [Architecture decision records](adr/) | One file per decision from ADR-012 onward |
+| - | [Architecture decision records](adr/) | One file per decision from ADR-022 onward |
 | - | [Glossary](../GLOSSARY.md) | Project vocabulary; use these words in code and docs |
 
 ## Rules for agents working from this spec

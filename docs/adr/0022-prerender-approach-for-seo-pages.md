@@ -137,11 +137,36 @@ the top N get correct meta from a small API-side handler:
 - Unknown or unpublished slugs return **404 with a real 404 page**, not a 200 shell. No soft-404s.
 - Responses carry `Cache-Control: public, s-maxage=300, stale-while-revalidate=86400`.
 
-The handler does string injection into a fixed placeholder, not HTML parsing. All injected values are
-HTML-escaped. Inside the JSON-LD `<script>` block, `<` is additionally serialised as its `<`
-escape (and `>` as `>`), so a provider display name containing `</script>` cannot close the block
-early. Provider-controlled text reaching a `<script>` block is the obvious XSS route here and the
-handler is the only place it can happen, so it gets dedicated tests — including that exact payload.
+The handler does string injection into a fixed placeholder, not HTML parsing. It has two injection
+sites and they need **different** escaping rules. Conflating them is how this goes wrong, so both are
+stated explicitly:
+
+- **Markup attributes and text — `<title>`, `<meta name="description">`, `<link rel="canonical">`,
+  Open Graph tags — are HTML-escaped**: `&`, `<`, `>`, `"` and `'` become entities. These values sit
+  in ordinary markup, where the HTML parser decodes entities back to the original characters.
+- **The JSON-LD payload is JSON-escaped, never HTML-escaped.** It is produced with `JSON.stringify`,
+  and then `<`, `>` and `&` are each replaced by their **JSON unicode escape** — the six-character
+  sequence backslash-`u003c` and so on, exactly as written in the snippet below — before the string
+  is written into the `<script type="application/ld+json">` block:
+
+  ```js
+  const json = JSON.stringify(ld)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026');
+  ```
+
+HTML escaping inside the JSON-LD block would be wrong on both counts. HTML entities are **not**
+decoded inside a `script` element, so `&lt;` would arrive at the JSON parser literally and break the
+JSON-LD, while a display name containing `</script>` would still terminate the block early — the
+exact attack the escaping exists to stop. The unicode escapes are valid JSON, are decoded by the JSON
+parser back to the original characters, and contain no `<`, so nothing in the payload can close the
+script element.
+
+Provider-controlled text reaching a `<script>` block is the obvious XSS route here and this handler
+is the only place it can happen, so it gets dedicated tests — including a display name of
+`</script><img src=x onerror=alert(1)>`, asserting both that the rendered page is inert and that the
+JSON-LD still parses.
 
 ### Sitemap
 
@@ -161,6 +186,11 @@ and "in the sitemap" cannot disagree for these pages.
   genuinely different requirements. Reviewers should expect it rather than "fix" it.
 - Pin React Router to v8 across all three apps so shared components in `packages/ui` stay portable.
   Import from `react-router`, never `react-router-dom`.
+- `packages/ui` components must not use framework-mode-only APIs — `Form`, route module exports
+  (`loader`, `action`, `meta`), or the typed `href` helper. A component that does works in `apps/web`
+  and breaks in `apps/provider` and `apps/admin`, which is the specific way the two idioms would start
+  leaking into each other. Shared components take data and callbacks as props; routing concerns stay
+  in the app. `packages/ui` does not exist yet, so this costs nothing to adopt now.
 - The customer web build depends on API availability for a *good* build and on nothing for a
   *working* build.
 - Production build time grows with N. Revisit N when the manifest exceeds ~2000 paths.
@@ -174,12 +204,25 @@ and "in the sitemap" cannot disagree for these pages.
 1. A prerendered city x category page returns HTML containing the H1 and listings **with JavaScript
    disabled**.
 2. The same page hydrates and behaves as an SPA with no console hydration warnings.
-3. A provider profile *not* in the manifest returns 200 with a unique `<title>` and valid JSON-LD.
+3. A provider profile *not* in the manifest returns 200 with a unique `<title>` and valid JSON-LD,
+   **served by the proxy falling through to `GET /api/v1/seo/page`** — not by the static fallback.
+   Assert this by comparing two non-prerendered profiles: their titles and canonicals must differ. A
+   misconfigured proxy that serves the generic fallback also returns 200 with a `<title>`, so a
+   single-page check passes while every profile ships identical meta.
 4. An unknown provider slug returns 404.
 5. Client-side navigation between a prerendered and a non-prerendered route works in both directions.
 6. A locality x category page with fewer than 3 published providers is absent from both the manifest
    and the sitemap, and serves `noindex,follow` with a canonical pointing at the city x category page
    (ADR-020). Crossing the threshold adds it on the next build and the next nightly sitemap run.
+7. **A cold load of a non-prerendered, non-`/p/` route** — e.g. `/search?city=delhi&category=grooming`
+   typed into a fresh tab, and a hard refresh on that URL — returns 200 and boots the SPA. This is the
+   nginx `/* -> /__spa-fallback.html 200` rewrite, which the Consequences section calls the single most
+   likely launch bug from this decision. Item 5 does not cover it: client-side navigation works fine
+   with a completely broken rewrite, because the server is never asked. Only a cold load or hard
+   refresh exercises it.
+8. **A production build with the API unreachable** exits 0, emits a warning, and prerenders from the
+   committed fallback manifest. Point the build at a dead port and assert all three. This branch runs
+   only during an outage, which is the worst possible time to discover it was never tested.
 
 If (1) or (2) fails and cannot be fixed within a day, fall back to option C and supersede this ADR.
 

@@ -51,7 +51,8 @@ Apache-2.0. The S3 gateway implements the object, bucket, IAM and STS APIs on on
 SDK v3, the AWS CLI and rclone work unchanged. `weed mini` is auto-tuned for a single node, which is
 exactly our deployment shape. Kubeflow Pipelines adopted it as its default storage backend,
 replacing MinIO; it is run at petabyte scale elsewhere. Anonymous read for the public bucket is a
-one-liner: `s3.bucket.access -name urbanpetly-media -user anonymous -access Read,List`.
+one-liner: `s3.bucket.access -name urbanpetly-media -user anonymous -access Read` (`Read` only — see
+[Buckets and access](#buckets-and-access) for why `List` is withheld).
 
 - (-) Configuration surface is larger than Garage's; the filer/volume/master split shows through
   even in single-node mode.
@@ -108,8 +109,16 @@ S3 gateway with AWS SDK v3 from `apps/api` only.
 
 | Bucket | Access | Notes |
 |---|---|---|
-| `urbanpetly-media` | anonymous `Read,List` | served at `media.urbanpetly.com` via Traefik |
+| `urbanpetly-media` | anonymous `Read` only — **not `List`** | served at `media.urbanpetly.com` via Traefik |
 | `urbanpetly-docs` | **no anonymous access** | presigned GET only, max 300 s expiry |
+
+**Why `Read` without `List`.** `media.urbanpetly.com` serves objects by known URL, which `Read`
+alone covers; nothing in the design enumerates the bucket anonymously. Granting `List` would make the
+whole media corpus scrapeable in one pass, and — more concretely — photos are uploaded during
+provider onboarding, while ADR-019 publishes a provider only after admin review. So the bucket
+contains images belonging to providers who are still unpublished or were rejected, and `List` would
+make those anonymously discoverable before anyone has looked at the business. Object keys are not a
+security boundary, but they should not be an index either.
 
 Required at deployment time, not later:
 
@@ -159,8 +168,10 @@ decision for the founder**, who owns hosting — see the open question added to
 - Lifecycle rules are not relied upon. Anything needing deletion (expired documents, orphaned
   uploads) is deleted by an explicit job in `apps/api/src/jobs/`, where it is testable.
 - An integration test suite runs against real SeaweedFS in CI, covering presigned PUT, presigned GET
-  expiry, and that `urbanpetly-docs` refuses anonymous GET. That last test is the one that would
-  catch a misconfiguration leaking identity documents, so it is not optional.
+  expiry, that `urbanpetly-docs` refuses anonymous GET, and that anonymous `ListObjects` on
+  `urbanpetly-media` is refused while anonymous GET of a known key succeeds. Those last two are the
+  tests that would catch a misconfiguration leaking identity documents or exposing the media bucket
+  as an index, so neither is optional.
 
 ## References
 - [MinIO removes management features from Community Edition](https://blocksandfiles.com/2025/06/19/minio-removes-management-features-from-basic-community-edition-object-storage-code/)

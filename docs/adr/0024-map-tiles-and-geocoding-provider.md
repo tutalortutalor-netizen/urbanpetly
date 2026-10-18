@@ -82,8 +82,10 @@ geocoding vendor. Revisit if tile costs ever become material, which at our volum
 Geoapify is chosen because it is the only shortlisted provider that explicitly permits commercial
 production use on its free tier — *"You can use the Free plan for commercial websites, apps, and
 business projects, including in production"* — while covering tiles, forward geocoding, autocomplete
-and reverse geocoding behind a single key. At our launch volume we sit inside 3,000 credits/day with
-room to spare, and the first paid step (API 10, $59/mo) is a known quantity rather than a sales call.
+and reverse geocoding behind a single key. At our launch volume we sit inside 3,000 credits/day at
+roughly half the budget — the arithmetic is in [Staying inside the free tier](#staying-inside-the-free-tier)
+rather than asserted — and the first paid step (API 10, $59/mo) is a known quantity rather than a
+sales call.
 
 ### Boundaries, because this decision will be revisited
 
@@ -123,7 +125,37 @@ Steady-state geocoding usage should round to zero. Three caches do that:
    me" from the same neighbourhood hits cache.
 
 Autocomplete is the one genuinely per-keystroke cost: debounce at 300 ms, require 3 characters, and
-cap at the Geoapify 5 req/s limit server-side. Usage alerting at 70% of the daily credit budget.
+cap at the Geoapify 5 req/s limit server-side.
+
+#### The credit budget, derived
+
+A map view is not one request — a viewport pulls a tile pyramid, and panning and zooming pull more —
+so "hundreds of map loads a day" has to be converted into credits before the free tier can be called
+sufficient. Geoapify's published rates: **1 map tile request = 0.25 credits (4 tiles = 1 credit)**,
+and 1 geocoding, autocomplete or reverse geocoding request = 1 credit. Geoapify sizes an 800x600
+view at **~6 vector tiles**, against ~12-20 raster tiles.
+
+| Item | Volume/day | Credits |
+|---|---|---|
+| Initial map views | 500 x 6 vector tiles x 0.25 | 750 |
+| Pan/zoom on ~30% of views | 150 x ~12 further tiles x 0.25 | 450 |
+| Autocomplete (onboarding + search, after debounce) | ~200 requests x 1 | 200 |
+| Forward + reverse geocoding (cache misses) | ~100 requests x 1 | 100 |
+| **Total** | | **~1,500 of 3,000** |
+
+So roughly 2x headroom, not an unlimited budget. Two things follow, and both are decisions rather
+than tuning:
+
+- **Vector tiles are mandatory, not a preference.** The same traffic on raster tiles is 12-20 tiles
+  per view instead of 6 — 2-3x the credits — which alone would put us at or over the cap. MapLibre
+  gives us vector by default; nothing may switch the style to a raster source without redoing this
+  table.
+- **~1,000 map loads/day is the upgrade trigger**, not an emergency. At that point we are near the
+  cap and move to API 10 ($59/mo). That is a budgeted step, and it is far cheaper than discovering
+  the ceiling through 429s in production.
+
+Usage alerting at 70% of the daily credit budget, delivered to the team channel that is actually
+watched rather than to an inbox nobody reads — an alert routed nowhere is the same as no alert.
 
 ### Address accuracy: do not trust the geocoder
 
@@ -158,6 +190,15 @@ licence obligation, so it belongs in the UX spec and in the component, not in a 
   and is usable without it, to protect the LCP <= 2.5 s budget in [06-nfr.md](../06-nfr.md).
 - If daily credits are exceeded, autocomplete degrades to locality-list filtering from our own DB
   rather than erroring. Search must never break because a third party said 429.
+- **Credit exhaustion blanks the basemap too, and that needs its own answer.** Separate tile and
+  geocoding keys do not mean separate budgets — both draw on one account credit pool, so a 429 hits
+  tiles on every page with a map, not just autocomplete. On tile 429 or repeated tile error, MapLibre
+  is torn down and the view falls back to the **results list with the provider's address and a
+  "Directions" deep link**; the map does not render as a grey void and no error dialog appears. The
+  list is the primary surface and the map is an enhancement ([06-nfr.md](../06-nfr.md) keeps it off
+  the critical rendering path), so this is a graceful reduction rather than an outage. A tile 429 is
+  also a **paging alert** — unlike the autocomplete fallback, it means we have hit the ceiling for
+  every user, and the fix is the $59/mo upgrade, not a code change.
 - **Open for the founder:** whether an India data-residency requirement or any Survey of India /
   National Geospatial Policy obligation applies to our use of a foreign map service. This is a legal
   question, not a technical one; it is logged in

@@ -20,7 +20,7 @@ PR as the file.
 | ADR-008 | Launch in Delhi NCR; at-home service mode included in v1 | 2026-10-18 | Accepted |
 | ADR-009 | v1 has request-based bookings with no online payment | 2026-10-18 | Accepted (confirmed by the Product Owner as v1 scope; see ADR-021 for monetisation) |
 | ADR-010 | Email-only notifications in v1 | 2026-10-18 | Accepted |
-| ADR-011 | Maps: MapLibre/Leaflet with a free-tier tile and geocoding provider | 2026-10-18 | Accepted (provider chosen in [ADR-024](adr/0024-map-tiles-and-geocoding-provider.md); Leaflet dropped) |
+| ADR-011 | Maps: MapLibre/Leaflet with a free-tier tile and geocoding provider | 2026-10-18 | Proposed (awaiting the founder's confirmation). The "provider to choose in spike" part is **superseded by [ADR-024](adr/0024-map-tiles-and-geocoding-provider.md)**, which picks MapLibre GL JS + Geoapify and drops Leaflet |
 | ADR-012 | Priority definitions: P0 = launch blocker, P1 = committed to launch but may slip, P2 = parking lot. **"v1" means P0 + P1.** | 2026-10-18 | Accepted |
 | ADR-013 | Priority corrections for consistency with 05-ux-spec and 08-delivery-plan: E2-S5 sort, E3-S3 call/WhatsApp and E8-S6 CSV import are raised to P0; "one review per customer per provider" is a P0 constraint folded into E5-S1 | 2026-10-18 | Accepted |
 | ADR-014 | Either party may mark an accepted request completed once the appointment window has passed, and a request auto-completes 48h after it | 2026-10-18 | Accepted |
