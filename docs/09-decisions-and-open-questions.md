@@ -120,6 +120,12 @@ Resolved in the SAM-50 pass (raised by the Tech Lead while merging SAM-45):
 | 20 | E5-S5 offers "Delete" inside the 7-day window but never said whether the customer's one-review-per-provider slot (ADR-013, `UNIQUE(provider_id, customer_id)`) is freed by it, so the constraint could not be built either way | 01 E5-S5, E5-S1 vs 03 reviews | The slot is spent; the confirmation warns and offers "Edit" instead. ADR-031, gap T8 |
 | 21 | E9-S1's only "not found" criterion covered a city or category that does not exist, so a locality that does not exist - or belongs to another city - fell into the same branch as a real locality with no supply (row 18) | 01 E9-S1 | Explicit criterion: a non-existent or wrong-city locality is "not found"; the zero-provider empty state is only for a real locality of that city |
 
+Resolved in the SAM-59 follow-up pass (raised by the Tech Lead while merging SAM-50):
+
+| # | Issue | Where | Resolution |
+|---|---|---|---|
+| 22 | ADR-031 left two criteria matching one situation: a customer who deleted inside the window satisfies E5-S5's "a provider I have already reviewed ... still inside its 7-day window, then I am offered to update it" while E5-S1 says their review is spent - and there is nothing to update | 01 E5-S5 vs E5-S1 | Both clauses now turn on whether the review **still stands**; a deleted review does not, so only the E5-S1 spent-review criterion matches that case |
+
 Open for the Project Manager (sequencing, not product):
 
 | # | Issue | Where |
@@ -140,6 +146,7 @@ Open for the Tech Lead (technical, not product):
 | T6 | The customer needs an endpoint to accept a proposed time and to mark a request completed (E4-S3, E4-S7) | 04 customer routes | Tech Lead |
 | T7 | Review moderation needs a route to find any review, not only reported ones (E8-S3) | 04 admin routes | Tech Lead |
 | T8 | `reviews` has no deleted state, but ADR-031 requires a deleted review to stop being public and stop counting while still holding the customer's `UNIQUE(provider_id, customer_id)` and `request_id` slot, and to keep enough of a record for a report already raised against it (E5-S4, E8-S3) | 03 `reviews`, `review_reports` | Tech Lead |
+| T9 | The contract has `PATCH /reviews/:id` ("edit within 7 days") and no delete route at all, while E5-S5 offers the button and requires the action. The route is needed whichever way ADR-031 had landed; ADR-031 only fixes its semantics - it removes the review from the profile and from the average and count, and it does **not** free the customer's slot, so it is not a hard delete (T8). Route shape and verb are the Tech Lead's call | 04 customer routes | Tech Lead |
 
 ## Open questions
 Each question below has the Product Owner's recommendation so that work is never blocked. Where a question is marked **blocking**, a story cannot be finished without the answer.
