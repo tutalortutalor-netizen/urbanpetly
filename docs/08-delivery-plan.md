@@ -5,7 +5,7 @@ Phases are sequential at the milestone level; work inside a phase runs in parall
 ## Phase 0 - Foundations
 Goal: everyone can build, test and deploy.
 - ADRs finalised (prerender approach, auth/session details, map provider, object store choice).
-- Scheduled-job design settled (spike 5 in 09-decisions-and-open-questions.md). Four stories across three phases wait on it, so the design cannot slip past Phase 0 even though nothing runs a job yet.
+- Scheduled-job design settled (spike 5 in 09-decisions-and-open-questions.md). Four stories across two phases wait on it, so the design cannot slip past Phase 0 even though nothing runs a job yet.
 - Monorepo scaffold, tooling, CI, `.env.example`s, Docker Compose for local (E12-S1, S2, S7).
 - Dokploy staging environment with MySQL and object store; backups configured (E12-S3, S5).
 - Design tokens and base components in `packages/ui`; Storybook.
@@ -20,7 +20,7 @@ Goal: everyone can build, test and deploy.
 ## Phase 2 - Accounts and requests
 - E1 (OTP), E6 (profile, pets, addresses, favourites), E4 (requests), E10 (emails).
 - **E4-S5** (the customer is emailed the provider's answer) and **E4-S6** (a request nobody answers expires after 72h) are launch-blocking here, raised from P1 by ADR-027. They are not follow-ons to be picked up later: E4-S3 says "the customer is told" and E4-S1 shows every customer a 72-hour promise, both on P0 screens.
-- Sequencing inside the phase: E4-S5 goes in the same slice as E4-S2 and E10-S1 - one send path, two recipients, and splitting them means building the template plumbing twice. E4-S6 goes in the same slice as E4-S7 - one job family on one runner, both P0, and both need the same catch-up and no-duplicate-email behaviour.
+- Sequencing inside the phase: E4-S5 goes in the same slice as E4-S2, E4-S3 and E10-S1 - one send path, two recipients, and splitting them means building the template plumbing twice. E4-S3 is in the slice because E4-S5 emails the provider's *answer*, so the accept/decline/propose actions have to exist before there is anything to send. E4-S6 goes in the same slice as E4-S7 - one job family on one runner, both P0, and both need the same catch-up and no-duplicate-email behaviour.
 - Exit: a customer can sign in and send a request; the provider is emailed; the customer is emailed the provider's answer; a request left unanswered for 72h expires on its own and tells the customer.
 
 ## Phase 3 - Provider tools and trust
