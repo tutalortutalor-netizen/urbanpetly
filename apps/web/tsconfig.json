@@ -1,0 +1,17 @@
+{
+  "extends": "@urbanpetly/config/tsconfig/react.json",
+  "compilerOptions": {
+    "types": ["vite/client", "node"],
+    // `react-router typegen` writes route types here; rootDirs lets a route
+    // module import them as a sibling (`./+types/<route>`).
+    "rootDirs": [".", "./.react-router/types"]
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    ".react-router/types/**/*",
+    "react-router.config.ts",
+    "vite.config.ts",
+    "vitest.config.ts"
+  ]
+}

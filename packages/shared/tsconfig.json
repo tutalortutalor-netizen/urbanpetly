@@ -1,0 +1,4 @@
+{
+  "extends": "@urbanpetly/config/tsconfig/node.json",
+  "include": ["src/**/*.ts"]
+}

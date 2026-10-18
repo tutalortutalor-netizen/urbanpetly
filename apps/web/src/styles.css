@@ -1,0 +1,5 @@
+@import 'tailwindcss';
+@import '@urbanpetly/ui/theme.css';
+
+/* Tailwind scans source for class names; shared components live outside this app. */
+@source '../../../packages/ui/src';
