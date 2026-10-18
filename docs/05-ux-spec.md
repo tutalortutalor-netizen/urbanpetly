@@ -2,6 +2,13 @@
 
 Owner: UI/UX Designer. Deliverables: design tokens, component library in `packages/ui`, high-fidelity mockups (mobile first) for every screen below, clickable prototype for the three core flows.
 
+> Those deliverables live in **[`docs/design/`](design/README.md)**: the
+> [design system](design/design-system.md), the [component build contract](design/component-inventory.md),
+> screen specs for [home](design/home.md), [search and listing](design/search-listing.md),
+> [provider profile](design/provider-profile.md) and the [request flow](design/request-flow.md),
+> the [core flows](design/core-flows.md) and a [clickable prototype](design/prototype/index.html).
+> This document stays the high-level spec; `docs/design/` is the detail the developers build from.
+
 ## Design principles
 - Mobile first (360px base). Large tap targets (44px+), thumb-friendly primary actions.
 - Warm, trustworthy, friendly; not childish. Photography-led cards.

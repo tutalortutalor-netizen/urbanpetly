@@ -1,0 +1,844 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>UrbanPetly — core flow 1 prototype</title>
+    <!--
+      Clickable prototype for core flow 1 (docs/design/core-flows.md):
+      Home -> Listing -> Profile -> Request 1-3 -> OTP -> Confirmation.
+
+      It loads the REAL token stylesheet, so colours, type, spacing, radii, shadows,
+      motion and the reduced-motion rule cannot drift from packages/ui. Add
+      ?brand=indigo-care to the URL to preview Brand Option B.
+
+      This is a design artefact, not production code: no build step, no framework,
+      content is hard-coded. The React implementation follows the screen specs.
+    -->
+    <link rel="stylesheet" href="../../../packages/ui/src/styles/tokens.css" />
+    <style>
+      *,
+      *::before,
+      *::after { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        background: var(--color-surface-sunken);
+        font-family: var(--font-body);
+        font-size: var(--text-body);
+        line-height: var(--text-body-lh);
+        color: var(--color-fg);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      h1, h2, h3 { font-family: var(--font-heading); margin: 0; }
+      h1 { font-size: var(--text-h1); line-height: var(--text-h1-lh); font-weight: 700; }
+      h2 { font-size: var(--text-h2); line-height: var(--text-h2-lh); font-weight: 600; }
+      h3 { font-size: var(--text-h3); line-height: var(--text-h3-lh); font-weight: 600; }
+      p { margin: 0; }
+
+      /* Phone frame — the prototype is designed at the 360px base width. */
+      .frame {
+        width: 100%;
+        max-width: 390px;
+        min-height: 100vh;
+        margin: 0 auto;
+        background: var(--color-bg);
+        box-shadow: var(--shadow-lg);
+        display: flex;
+        flex-direction: column;
+        position: relative;
+      }
+      @media (min-width: 768px) {
+        body { padding: var(--space-6) 0; }
+        .frame { min-height: 780px; border-radius: var(--radius-xl); overflow: hidden; }
+      }
+
+      .screen { display: none; flex-direction: column; flex: 1; }
+      .screen[data-active] { display: flex; animation: enter var(--duration-slow) var(--ease-enter); }
+      @keyframes enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+      .bar {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        min-height: 56px;
+        padding: var(--space-2) var(--space-4);
+        background: var(--color-surface);
+        border-bottom: 1px solid var(--color-border);
+        position: sticky;
+        top: 0;
+        z-index: var(--z-header);
+      }
+      .bar h1, .bar h2 { font-size: var(--text-h3); line-height: var(--text-h3-lh); }
+      .brand { font-family: var(--font-heading); font-weight: 700; letter-spacing: -0.01em; }
+      .brand span { color: var(--color-primary); }
+
+      .body { padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-6); flex: 1; }
+      .stack { display: flex; flex-direction: column; gap: var(--space-3); }
+      .row { display: flex; align-items: center; gap: var(--space-2); }
+      .spread { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+      .muted { color: var(--color-fg-muted); font-size: var(--text-body-sm); line-height: var(--text-body-sm-lh); }
+      .tabular { font-variant-numeric: tabular-nums; }
+      .price { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+      /* --- controls ------------------------------------------------------ */
+      .btn {
+        min-height: var(--target-min);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-2);
+        padding: 0 var(--space-4);
+        border-radius: var(--radius-md);
+        border: 1px solid transparent;
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color var(--duration-fast) var(--ease-standard);
+      }
+      .btn--primary { background: var(--color-primary); color: var(--color-primary-fg); }
+      .btn--primary:hover { background: var(--color-primary-hover); }
+      .btn--primary:active { background: var(--color-primary-active); }
+      .btn--secondary { background: var(--color-surface); color: var(--color-fg); border-color: var(--color-border-strong); }
+      .btn--secondary:hover { background: var(--color-surface-sunken); }
+      .btn--ghost { background: transparent; color: var(--color-primary); }
+      .btn--ghost:hover { background: var(--color-primary-subtle); }
+      .btn--block { width: 100%; }
+      .btn--lg { min-height: 52px; font-size: var(--text-body-lg); }
+      .icon-btn {
+        min-width: var(--target-min);
+        min-height: var(--target-min);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 0;
+        background: transparent;
+        border-radius: var(--radius-pill);
+        font: inherit;
+        font-size: var(--text-body-lg);
+        cursor: pointer;
+        color: var(--color-fg);
+      }
+      .icon-btn:hover { background: var(--color-surface-sunken); }
+
+      .field { display: flex; flex-direction: column; gap: var(--space-1); }
+      .field > label { font-size: var(--text-body-sm); font-weight: 600; }
+      .input {
+        min-height: var(--target-min);
+        padding: 0 var(--space-3);
+        border: 1px solid var(--color-border-strong);
+        border-radius: var(--radius-md);
+        background: var(--color-surface);
+        font: inherit;
+        color: var(--color-fg);
+      }
+      .input::placeholder { color: var(--color-fg-subtle); }
+      .input:focus-visible { border-color: var(--color-primary); }
+      .input--lg { min-height: 52px; font-size: var(--text-body-lg); }
+      textarea.input { padding: var(--space-3); min-height: 88px; resize: vertical; }
+
+      /* --- chips and badges ---------------------------------------------- */
+      .chips { display: flex; gap: var(--space-2); overflow-x: auto; padding-bottom: var(--space-1); scrollbar-width: none; }
+      .chips::-webkit-scrollbar { display: none; }
+      .chips--wrap { flex-wrap: wrap; overflow: visible; }
+      .chip {
+        min-height: 36px;
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-1);
+        padding: 0 var(--space-3);
+        white-space: nowrap;
+        border: 1px solid var(--color-border-strong);
+        border-radius: var(--radius-pill);
+        background: var(--color-surface);
+        color: var(--color-fg);
+        font: inherit;
+        font-size: var(--text-body-sm);
+        cursor: pointer;
+      }
+      .chip:hover { background: var(--color-surface-sunken); }
+      .chip[aria-pressed='true'],
+      .chip[aria-checked='true'] {
+        background: var(--color-primary-subtle);
+        border-color: var(--color-primary);
+        color: var(--color-primary-hover);
+        font-weight: 600;
+      }
+      .chip:disabled { background: var(--color-surface-sunken); color: var(--color-fg-subtle); cursor: not-allowed; }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px var(--space-2);
+        border-radius: var(--radius-sm);
+        font-size: var(--text-caption);
+        line-height: var(--text-caption-lh);
+        font-weight: 500;
+        min-height: 24px;
+      }
+      .badge--verified { background: var(--color-success-subtle); color: var(--color-success-fg); }
+      .badge--open { background: var(--color-success-subtle); color: var(--color-success-fg); }
+      .badge--home { background: var(--color-primary-subtle); color: var(--color-primary-hover); }
+      .badge--accent { background: var(--color-accent-subtle); color: var(--color-accent-fg); }
+      .badge--pending { background: var(--color-warning-subtle); color: var(--color-warning-fg); }
+
+      /* --- cards ---------------------------------------------------------- */
+      .card {
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-xs);
+        padding: var(--space-4);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+        text-align: left;
+        font: inherit;
+        color: inherit;
+        width: 100%;
+        cursor: pointer;
+      }
+      .card:hover { box-shadow: var(--shadow-sm); }
+      .card--flat { cursor: default; box-shadow: none; }
+      .photo {
+        aspect-ratio: 4 / 3;
+        border-radius: var(--radius-md);
+        background: linear-gradient(135deg, var(--color-primary-subtle), var(--color-accent-subtle));
+        display: flex;
+        align-items: flex-end;
+        padding: var(--space-2);
+        gap: var(--space-1);
+        font-size: 2rem;
+      }
+      .photo--hero { aspect-ratio: 3 / 2; border-radius: 0; }
+
+      .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); }
+      .tile {
+        min-height: 96px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-1);
+        padding: var(--space-2);
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-lg);
+        font: inherit;
+        font-size: var(--text-body-sm);
+        font-weight: 600;
+        color: var(--color-fg);
+        cursor: pointer;
+      }
+      .tile:hover { box-shadow: var(--shadow-sm); }
+      .tile span:first-child { font-size: 1.75rem; }
+
+      .rail { display: flex; gap: var(--space-3); overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+      .rail::-webkit-scrollbar { display: none; }
+      .rail > * { flex: 0 0 82%; scroll-snap-align: start; }
+
+      /* --- flow furniture -------------------------------------------------- */
+      .stepper { padding: var(--space-2) var(--space-4) 0; background: var(--color-surface); }
+      .stepper p { font-size: var(--text-caption); color: var(--color-fg-muted); margin-bottom: var(--space-1); }
+      .progress { height: 4px; border-radius: var(--radius-pill); background: var(--color-surface-sunken); overflow: hidden; }
+      .progress > i { display: block; height: 100%; background: var(--color-primary); transition: width var(--duration-base) var(--ease-standard); }
+
+      .sticky-actions {
+        position: sticky;
+        bottom: 0;
+        display: flex;
+        gap: var(--space-3);
+        padding: var(--space-3) var(--space-4) max(var(--space-4), env(safe-area-inset-bottom));
+        background: var(--color-surface);
+        border-top: 1px solid var(--color-border);
+        z-index: var(--z-sticky);
+      }
+      .sticky-actions .btn { flex: 1; }
+      .sticky-actions .btn--primary { flex: 2; }
+
+      .panel { padding: var(--space-3); border-radius: var(--radius-md); font-size: var(--text-body-sm); line-height: var(--text-body-sm-lh); }
+      .panel--info { background: var(--color-primary-subtle); color: var(--color-primary-hover); }
+      .panel--accent { background: var(--color-accent-subtle); color: var(--color-accent-fg); }
+
+      .summary { display: flex; flex-direction: column; gap: var(--space-3); }
+      .summary > div { display: flex; justify-content: space-between; gap: var(--space-3); padding-bottom: var(--space-3); border-bottom: 1px solid var(--color-border); }
+      .summary > div:last-child { border-bottom: 0; padding-bottom: 0; }
+
+      .otp { display: flex; gap: var(--space-2); }
+      .otp input {
+        width: 48px;
+        height: 52px;
+        text-align: center;
+        font-size: var(--text-h3);
+        font-variant-numeric: tabular-nums;
+        border: 1px solid var(--color-border-strong);
+        border-radius: var(--radius-md);
+        background: var(--color-surface);
+      }
+
+      dialog {
+        border: 0;
+        padding: 0;
+        width: min(100%, 390px);
+        margin: auto auto 0;
+        border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+        box-shadow: var(--shadow-lg);
+        background: var(--color-surface);
+      }
+      dialog::backdrop { background: var(--color-overlay); }
+      .sheet { padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-4); }
+
+      .success-mark {
+        width: 64px;
+        height: 64px;
+        border-radius: var(--radius-pill);
+        background: var(--color-success-subtle);
+        color: var(--color-success-fg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        margin: 0 auto;
+      }
+
+      .steps { margin: 0; padding-left: var(--space-5); display: flex; flex-direction: column; gap: var(--space-2); }
+
+      .skip {
+        position: absolute;
+        left: var(--space-4);
+        top: var(--space-2);
+        z-index: var(--z-modal);
+        background: var(--color-surface);
+        padding: var(--space-2) var(--space-3);
+        border-radius: var(--radius-md);
+      }
+      .skip:not(:focus) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+      .note {
+        max-width: 390px;
+        margin: var(--space-4) auto 0;
+        padding: var(--space-4);
+        font-size: var(--text-body-sm);
+        color: var(--color-fg-muted);
+      }
+      .note a { color: var(--color-primary); }
+    </style>
+  </head>
+  <body>
+    <main class="frame">
+      <a class="skip" href="#content">Skip to content</a>
+
+      <!-- ================= HOME ================= -->
+      <section class="screen" data-screen="home" data-active aria-labelledby="home-title">
+        <div class="bar">
+          <span class="brand">urban<span>petly</span></span>
+          <span style="flex: 1"></span>
+          <button class="btn btn--ghost" type="button" data-go="login-note">Sign in</button>
+        </div>
+        <div class="bar" style="min-height: 44px; position: static">
+          <button class="icon-btn" type="button" aria-label="Change location, currently Gurgaon, Sector 56">📍</button>
+          <span class="muted">Gurgaon · Sector 56</span>
+        </div>
+
+        <div class="body" id="content">
+          <div class="stack">
+            <h1 id="home-title" style="font-size: var(--text-display); line-height: var(--text-display-lh)">
+              Every pet service in Delhi NCR, in one place.
+            </h1>
+            <label class="sr-only" for="home-search" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Search</label>
+            <input class="input input--lg" id="home-search" type="search" placeholder="Search groomers, vets, boarding…" />
+          </div>
+
+          <div class="tiles">
+            <button class="tile" type="button" data-go="listing"><span>🛁</span><span>Grooming</span></button>
+            <button class="tile" type="button" data-go="listing"><span>🩺</span><span>Vets</span></button>
+            <button class="tile" type="button" data-go="listing"><span>🏠</span><span>Boarding</span></button>
+            <button class="tile" type="button" data-go="listing"><span>🎾</span><span>Training</span></button>
+            <button class="tile" type="button" data-go="listing"><span>🦮</span><span>Walking</span></button>
+            <button class="tile" type="button" data-go="listing"><span>🛍️</span><span>Stores</span></button>
+          </div>
+
+          <div class="stack">
+            <div class="spread">
+              <h2>Popular near you</h2>
+              <button class="btn btn--ghost" type="button" data-go="listing">See all</button>
+            </div>
+            <div class="rail">
+              <button class="card" type="button" data-go="profile">
+                <span class="photo">🐩</span>
+                <h3>Happy Tails Grooming</h3>
+                <span class="muted tabular">★ 4.6 (38) · 1.2 km · Sector 56</span>
+                <span class="row"><span class="price">Starts at ₹800</span><span class="badge badge--home">At home</span></span>
+              </button>
+              <button class="card" type="button" data-go="profile">
+                <span class="photo">🐕</span>
+                <h3>Pawfect Spa</h3>
+                <span class="muted tabular">★ 4.4 (21) · 2.0 km · Sector 54</span>
+                <span class="row"><span class="price">Starts at ₹650</span></span>
+              </button>
+            </div>
+          </div>
+
+          <div class="stack">
+            <h2>How it works</h2>
+            <ol class="steps muted">
+              <li>Search your area</li>
+              <li>Compare prices and reviews</li>
+              <li>Send a request — no payment needed</li>
+            </ol>
+          </div>
+
+          <div class="panel panel--accent stack">
+            <strong>Run a pet business?</strong>
+            <span>Get found by pet parents nearby.</span>
+            <button class="btn btn--secondary" type="button" data-go="login-note">List your business</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= LISTING ================= -->
+      <section class="screen" data-screen="listing" aria-labelledby="listing-title">
+        <div class="bar">
+          <button class="icon-btn" type="button" aria-label="Back" data-go="home">←</button>
+          <h1 id="listing-title">Grooming in Sector 56</h1>
+        </div>
+
+        <div class="body">
+          <div class="chips" role="group" aria-label="Filters">
+            <button class="chip" type="button" data-go="login-note">Filters · 1</button>
+            <button class="chip" type="button" aria-pressed="true" data-filter>At home</button>
+            <button class="chip" type="button" aria-pressed="false" data-filter>4★ and up</button>
+            <button class="chip" type="button" aria-pressed="false" data-filter>Open now</button>
+            <button class="chip" type="button" aria-pressed="false" data-filter>Verified</button>
+          </div>
+
+          <div class="spread">
+            <p class="muted tabular" id="result-count" role="status">24 groomers · within 10 km</p>
+            <button class="btn btn--ghost" type="button" data-go="login-note">Sort: Distance</button>
+          </div>
+
+          <div class="stack">
+            <button class="card" type="button" data-go="profile">
+              <span class="photo">🐩<span class="badge badge--verified" style="font-size: var(--text-caption)">Verified</span></span>
+              <h3>Happy Tails Grooming</h3>
+              <span class="muted tabular">★ 4.6 (38) · 1.2 km · Sector 56</span>
+              <span class="row"><span class="price">Starts at ₹800</span><span class="badge badge--home">At home</span></span>
+              <span><span class="badge badge--open">● Open now</span></span>
+            </button>
+            <button class="card" type="button" data-go="profile">
+              <span class="photo">🐕</span>
+              <h3>Pawfect Spa</h3>
+              <span class="muted tabular">★ 4.4 (21) · 2.0 km · Sector 54</span>
+              <span class="row"><span class="price">Starts at ₹650</span><span class="badge badge--home">At home</span></span>
+            </button>
+            <button class="card" type="button" data-go="profile">
+              <span class="photo">🐈</span>
+              <h3>The Grooming Room</h3>
+              <span class="muted tabular">★ 4.8 (12) · 3.4 km · DLF Phase 4</span>
+              <span class="row"><span class="price">Starts at ₹1,200</span></span>
+            </button>
+          </div>
+
+          <button class="btn btn--secondary btn--block" type="button" data-go="login-note">Load more · Showing 20 of 24</button>
+        </div>
+      </section>
+
+      <!-- ================= PROFILE ================= -->
+      <section class="screen" data-screen="profile" aria-labelledby="profile-title">
+        <div class="bar">
+          <button class="icon-btn" type="button" aria-label="Back" data-go="listing">←</button>
+          <span style="flex: 1"></span>
+          <button class="icon-btn" type="button" aria-label="Share">⤴</button>
+          <button class="icon-btn" type="button" aria-label="Save Happy Tails Grooming" aria-pressed="false" data-fav>♡</button>
+        </div>
+
+        <span class="photo photo--hero">🐩</span>
+
+        <div class="body" style="gap: var(--space-5)">
+          <div class="stack">
+            <h1 id="profile-title">Happy Tails Grooming</h1>
+            <div class="row" style="flex-wrap: wrap">
+              <span class="badge badge--verified">✓ Verified</span>
+              <span class="badge badge--home">🏠 At home</span>
+            </div>
+            <p aria-label="Rated 4.6 out of 5 from 38 reviews">
+              <span style="color: var(--color-accent)" aria-hidden="true">★★★★☆</span>
+              <span class="tabular">4.6 (38 reviews)</span>
+            </p>
+            <p class="muted tabular">Sector 56, Gurgaon · 1.2 km away</p>
+            <p><span class="badge badge--open">● Open now</span> <span class="muted">Closes 8 pm</span></p>
+          </div>
+
+          <div class="stack">
+            <h2>About</h2>
+            <p class="muted">Full-service grooming for dogs and cats, at our centre or at your home. Ten years in Sector 56.</p>
+          </div>
+
+          <div class="stack">
+            <h2>Services and prices</h2>
+            <div class="card card--flat">
+              <div class="spread"><h3>Full groom — dogs</h3><span class="price">₹800 – ₹1,500</span></div>
+              <p class="muted">90 min</p>
+              <div class="row"><span class="badge badge--accent">At centre</span><span class="badge badge--home">At home</span></div>
+              <button class="btn btn--secondary" type="button" data-go="request-1">Request</button>
+            </div>
+            <div class="card card--flat">
+              <div class="spread"><h3>Nail trim</h3><span class="price">₹200</span></div>
+              <p class="muted">15 min</p>
+              <div class="row"><span class="badge badge--accent">At centre</span></div>
+            </div>
+          </div>
+
+          <div class="stack">
+            <h2>Home visits</h2>
+            <p class="muted">Visits Sector 54, 56, 57, DLF Phase 4 and 6 more · up to 8 km</p>
+          </div>
+
+          <div class="stack">
+            <h2>Reviews (38)</h2>
+            <div class="card card--flat">
+              <div class="spread"><h3>Riya S.</h3><span class="muted">2 weeks ago</span></div>
+              <p><span style="color: var(--color-accent)" aria-hidden="true">★★★★★</span> <span class="sr-only">Rated 5 out of 5</span></p>
+              <p class="muted">Gentle with my anxious beagle. Came home on time and cleaned up after.</p>
+            </div>
+            <button class="btn btn--secondary btn--block" type="button" data-go="login-note">Show all 38 reviews</button>
+          </div>
+
+          <p class="muted">Free to request. The provider confirms — no payment here.</p>
+        </div>
+
+        <div class="sticky-actions">
+          <a class="btn btn--secondary" href="tel:+919876543210">📞 Call</a>
+          <button class="btn btn--primary" type="button" data-go="request-1">Request booking</button>
+        </div>
+      </section>
+
+      <!-- ================= REQUEST STEP 1 ================= -->
+      <section class="screen" data-screen="request-1" aria-labelledby="r1-title">
+        <div class="bar">
+          <button class="icon-btn" type="button" aria-label="Back" data-go="profile">←</button>
+          <h2>Request booking</h2>
+          <span style="flex: 1"></span>
+          <button class="icon-btn" type="button" aria-label="Close" data-go="profile">×</button>
+        </div>
+        <div class="stepper">
+          <p>Step 1 of 3</p>
+          <div class="progress" aria-hidden="true"><i style="width: 33%"></i></div>
+        </div>
+
+        <div class="body">
+          <h1 id="r1-title">What do you need?</h1>
+          <div class="stack" role="radiogroup" aria-label="Choose a service">
+            <button class="chip" type="button" role="radio" aria-checked="true" data-radio style="min-height: auto; padding: var(--space-3); border-radius: var(--radius-lg); white-space: normal; text-align: left; flex-direction: column; align-items: flex-start; gap: var(--space-1)">
+              <strong>Full groom — dogs</strong>
+              <span class="muted tabular">90 min · ₹800 – ₹1,500</span>
+            </button>
+            <button class="chip" type="button" role="radio" aria-checked="false" data-radio style="min-height: auto; padding: var(--space-3); border-radius: var(--radius-lg); white-space: normal; text-align: left; flex-direction: column; align-items: flex-start; gap: var(--space-1)">
+              <strong>Nail trim</strong>
+              <span class="muted tabular">15 min · ₹200</span>
+            </button>
+            <button class="chip" type="button" role="radio" aria-checked="false" data-radio style="min-height: auto; padding: var(--space-3); border-radius: var(--radius-lg); white-space: normal; text-align: left">
+              Something else — I'll describe it
+            </button>
+          </div>
+          <p class="muted">No payment here. The provider confirms.</p>
+        </div>
+
+        <div class="sticky-actions">
+          <button class="btn btn--primary btn--lg btn--block" type="button" data-go="request-2">Continue</button>
+        </div>
+      </section>
+
+      <!-- ================= REQUEST STEP 2 ================= -->
+      <section class="screen" data-screen="request-2" aria-labelledby="r2-title">
+        <div class="bar">
+          <button class="icon-btn" type="button" aria-label="Back" data-go="request-1">←</button>
+          <h2>Request booking</h2>
+          <span style="flex: 1"></span>
+          <button class="icon-btn" type="button" aria-label="Close" data-go="profile">×</button>
+        </div>
+        <div class="stepper">
+          <p>Step 2 of 3</p>
+          <div class="progress" aria-hidden="true"><i style="width: 66%"></i></div>
+        </div>
+
+        <div class="body">
+          <h1 id="r2-title">When and where?</h1>
+
+          <div class="field">
+            <label for="pet">Which pet?</label>
+            <select class="input" id="pet">
+              <option>Simba — Beagle, 3 yrs</option>
+              <option>Add a pet…</option>
+            </select>
+          </div>
+
+          <div class="stack">
+            <h2 id="date-label">When works for you?</h2>
+            <div class="chips" role="radiogroup" aria-labelledby="date-label">
+              <button class="chip" type="button" role="radio" aria-checked="false" data-radio>Today</button>
+              <button class="chip" type="button" role="radio" aria-checked="false" data-radio>Tomorrow</button>
+              <button class="chip" type="button" role="radio" aria-checked="true" data-radio>Tue 21</button>
+              <button class="chip" type="button" role="radio" aria-checked="false" data-radio>Wed 22</button>
+              <button class="chip" type="button" disabled>Sun 26 · Closed</button>
+            </div>
+            <div class="chips chips--wrap" role="radiogroup" aria-label="Choose a time window">
+              <button class="chip" type="button" role="radio" aria-checked="false" data-radio>Morning (8 am–12 pm)</button>
+              <button class="chip" type="button" role="radio" aria-checked="true" data-radio>Afternoon (12–4 pm)</button>
+              <button class="chip" type="button" role="radio" aria-checked="false" data-radio>Evening (4–8 pm)</button>
+            </div>
+          </div>
+
+          <div class="stack">
+            <h2 id="mode-label">Where?</h2>
+            <div class="chips chips--wrap" role="radiogroup" aria-labelledby="mode-label">
+              <button class="chip" type="button" role="radio" aria-checked="false" data-radio>At the centre</button>
+              <button class="chip" type="button" role="radio" aria-checked="true" data-radio>At my home</button>
+            </div>
+            <div class="field">
+              <label for="address">Address</label>
+              <select class="input" id="address">
+                <option>Home — A-12, Sector 54</option>
+                <option>Add a new address…</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="note">Anything else? (optional)</label>
+            <textarea class="input" id="note" maxlength="300" placeholder="Anything the provider should know?">Simba is nervous with clippers.</textarea>
+          </div>
+        </div>
+
+        <div class="sticky-actions">
+          <button class="btn btn--secondary" type="button" data-go="request-1">Back</button>
+          <button class="btn btn--primary" type="button" data-go="request-3">Continue</button>
+        </div>
+      </section>
+
+      <!-- ================= REQUEST STEP 3 ================= -->
+      <section class="screen" data-screen="request-3" aria-labelledby="r3-title">
+        <div class="bar">
+          <button class="icon-btn" type="button" aria-label="Back" data-go="request-2">←</button>
+          <h2>Request booking</h2>
+          <span style="flex: 1"></span>
+          <button class="icon-btn" type="button" aria-label="Close" data-go="profile">×</button>
+        </div>
+        <div class="stepper">
+          <p>Step 3 of 3</p>
+          <div class="progress" aria-hidden="true"><i style="width: 100%"></i></div>
+        </div>
+
+        <div class="body">
+          <h1 id="r3-title">Check and send</h1>
+
+          <div class="card card--flat summary">
+            <div>
+              <span><strong>Happy Tails Grooming</strong><br /><span class="muted">Full groom — dogs · 90 min</span><br /><span class="price">₹800 – ₹1,500</span></span>
+              <button class="btn btn--ghost" type="button" data-go="request-1">Edit</button>
+            </div>
+            <div><span>Simba (Beagle, 3 yrs)</span><button class="btn btn--ghost" type="button" data-go="request-2">Edit</button></div>
+            <div><span class="tabular">Tue, 21 Oct · Afternoon</span><button class="btn btn--ghost" type="button" data-go="request-2">Edit</button></div>
+            <div><span>At my home · A-12, Sector 54</span><button class="btn btn--ghost" type="button" data-go="request-2">Edit</button></div>
+            <div><span class="muted">“Simba is nervous with clippers.”</span><button class="btn btn--ghost" type="button" data-go="request-2">Edit</button></div>
+          </div>
+
+          <p class="panel panel--info">
+            This is a request, not a confirmed booking. Happy Tails has 72 hours to reply. No payment is taken here.
+          </p>
+          <p class="muted">Your number is shared with the provider only if they accept.</p>
+        </div>
+
+        <div class="sticky-actions">
+          <button class="btn btn--primary btn--lg btn--block" type="button" data-open-otp>Send request</button>
+        </div>
+      </section>
+
+      <!-- ================= CONFIRMATION ================= -->
+      <section class="screen" data-screen="confirmation" aria-labelledby="done-title">
+        <div class="body" style="justify-content: center; text-align: center; gap: var(--space-5)">
+          <span class="success-mark" aria-hidden="true">✓</span>
+          <h1 id="done-title" tabindex="-1">Request sent</h1>
+          <p class="muted">Happy Tails Grooming has your request for Tue, 21 Oct, afternoon.</p>
+
+          <div class="card card--flat" style="text-align: left">
+            <h2>What happens next</h2>
+            <ol class="steps muted">
+              <li>They reply within 72 hours.</li>
+              <li>We'll email you as soon as they do.</li>
+              <li>If they accept, you'll get their number and they'll get yours.</li>
+            </ol>
+            <p><span class="badge badge--pending">Pending</span></p>
+          </div>
+
+          <div class="stack">
+            <button class="btn btn--primary btn--lg" type="button" data-go="login-note">View my requests</button>
+            <button class="btn btn--secondary" type="button" data-go="profile">Back to Happy Tails</button>
+            <button class="btn btn--ghost" type="button" data-go="listing">See similar groomers nearby</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= OUT OF SCOPE NOTICE ================= -->
+      <section class="screen" data-screen="login-note" aria-labelledby="note-title">
+        <div class="bar">
+          <button class="icon-btn" type="button" aria-label="Back" data-back>←</button>
+          <h2>Not in this prototype</h2>
+        </div>
+        <div class="body" style="justify-content: center; text-align: center">
+          <h1 id="note-title">This screen is specified, not prototyped</h1>
+          <p class="muted">
+            Core flow 1 is clickable here. Account, filters sheet, sort, map and the provider and
+            admin flows are specified in <code>docs/design/</code> and built in Phase 1–3.
+          </p>
+          <button class="btn btn--primary" type="button" data-back>Go back</button>
+        </div>
+      </section>
+
+      <!-- ================= OTP SHEET ================= -->
+      <dialog id="otp-sheet" aria-labelledby="otp-title">
+        <form class="sheet" method="dialog">
+          <div class="spread">
+            <h2 id="otp-title">Confirm your number</h2>
+            <button class="icon-btn" type="button" aria-label="Close" data-close-otp>×</button>
+          </div>
+          <p class="muted">We'll text you a code so the provider knows you're real.</p>
+
+          <div class="field">
+            <label for="phone">Mobile number</label>
+            <div class="row">
+              <span class="input" style="display: inline-flex; align-items: center">+91</span>
+              <input class="input" id="phone" style="flex: 1" inputmode="numeric" autocomplete="tel-national" value="98765 43210" />
+            </div>
+          </div>
+
+          <div class="stack" id="otp-step" hidden>
+            <p class="muted">Sent to +91 98765 43210</p>
+            <div class="otp" role="group" aria-label="Enter the 6-digit code">
+              <input inputmode="numeric" maxlength="1" aria-label="Digit 1 of 6" autocomplete="one-time-code" />
+              <input inputmode="numeric" maxlength="1" aria-label="Digit 2 of 6" />
+              <input inputmode="numeric" maxlength="1" aria-label="Digit 3 of 6" />
+              <input inputmode="numeric" maxlength="1" aria-label="Digit 4 of 6" />
+              <input inputmode="numeric" maxlength="1" aria-label="Digit 5 of 6" />
+              <input inputmode="numeric" maxlength="1" aria-label="Digit 6 of 6" />
+            </div>
+            <p class="muted">Resend code in 0:29</p>
+          </div>
+
+          <label class="row" style="align-items: flex-start; gap: var(--space-2)">
+            <input type="checkbox" style="min-width: 20px; min-height: 20px; margin-top: 2px" />
+            <span class="muted">I agree to the Terms and Privacy Policy</span>
+          </label>
+
+          <button class="btn btn--primary btn--lg btn--block" type="button" data-otp-next>Send code</button>
+        </form>
+      </dialog>
+    </main>
+
+    <p class="note">
+      Prototype for core flow 1 — see <a href="../core-flows.md">core-flows.md</a>. Colours, type,
+      spacing and motion come from <code>packages/ui/src/styles/tokens.css</code>. Append
+      <code>?brand=indigo-care</code> to preview Brand Option B.
+    </p>
+
+    <script>
+      // Brand preview: ?brand=indigo-care
+      const brand = new URLSearchParams(location.search).get('brand');
+      if (brand) document.documentElement.dataset.brand = brand;
+
+      const screens = [...document.querySelectorAll('[data-screen]')];
+      const history = ['home'];
+
+      function show(name) {
+        screens.forEach((s) => {
+          if (s.dataset.screen === name) s.setAttribute('data-active', '');
+          else s.removeAttribute('data-active');
+        });
+        // Focus management: land on the new screen's heading, like a real route change.
+        const active = screens.find((s) => s.dataset.screen === name);
+        const heading = active?.querySelector('h1');
+        if (heading) {
+          heading.setAttribute('tabindex', '-1');
+          heading.focus({ preventScroll: true });
+        }
+        window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+      }
+
+      document.addEventListener('click', (event) => {
+        const go = event.target.closest('[data-go]');
+        if (go) {
+          history.push(go.dataset.go);
+          show(go.dataset.go);
+          return;
+        }
+
+        if (event.target.closest('[data-back]')) {
+          history.pop();
+          show(history[history.length - 1] ?? 'home');
+          return;
+        }
+
+        // Chip toggles and radio groups behave like the real components.
+        const toggle = event.target.closest('[data-filter]');
+        if (toggle) {
+          toggle.setAttribute('aria-pressed', toggle.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+          document.getElementById('result-count').textContent = '18 groomers · within 10 km';
+          return;
+        }
+
+        const radio = event.target.closest('[data-radio]');
+        if (radio) {
+          radio.closest('[role="radiogroup"]')
+            ?.querySelectorAll('[data-radio]')
+            .forEach((r) => r.setAttribute('aria-checked', String(r === radio)));
+          return;
+        }
+
+        const fav = event.target.closest('[data-fav]');
+        if (fav) {
+          const pressed = fav.getAttribute('aria-pressed') === 'true';
+          fav.setAttribute('aria-pressed', String(!pressed));
+          fav.textContent = pressed ? '♡' : '♥';
+        }
+      });
+
+      // OTP sheet: send -> code -> auto-submit the request, exactly as specified.
+      const sheet = document.getElementById('otp-sheet');
+      const otpStep = document.getElementById('otp-step');
+      const otpNext = sheet.querySelector('[data-otp-next]');
+
+      document.querySelector('[data-open-otp]').addEventListener('click', () => {
+        otpStep.hidden = true;
+        otpNext.textContent = 'Send code';
+        sheet.showModal();
+        sheet.querySelector('#phone').focus();
+      });
+
+      sheet.querySelector('[data-close-otp]').addEventListener('click', () => sheet.close());
+
+      otpNext.addEventListener('click', () => {
+        if (otpStep.hidden) {
+          otpStep.hidden = false;
+          otpNext.textContent = 'Verify and send request';
+          otpStep.querySelector('input').focus();
+          return;
+        }
+        sheet.close();
+        history.push('confirmation');
+        show('confirmation');
+      });
+
+      // OTP auto-advance.
+      otpStep.querySelectorAll('input').forEach((input, index, all) => {
+        input.addEventListener('input', () => {
+          if (input.value && index < all.length - 1) all[index + 1].focus();
+        });
+        input.addEventListener('keydown', (event) => {
+          if (event.key === 'Backspace' && !input.value && index > 0) all[index - 1].focus();
+        });
+      });
+    </script>
+  </body>
+</html>
