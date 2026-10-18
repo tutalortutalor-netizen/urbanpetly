@@ -1,4 +1,4 @@
-# ADR-013: Object storage product and backup approach
+# ADR-023: Object storage product and backup approach
 
 - Status: Accepted
 - Date: 2026-10-18
@@ -11,9 +11,10 @@
 ADR-006 chose "self-hosted S3-compatible storage on Dokploy" but left the product open, explicitly
 flagging a MinIO status check. The workload is small and well defined:
 
-- **Public bucket** (`media`): provider photos, served from `media.urbanpetly.com`. Public read.
-- **Private bucket** (`docs`): verification documents. No public read ever; access only through
-  signed URLs expiring within 5 minutes ([06-nfr.md](../06-nfr.md)).
+- **Public bucket** (`urbanpetly-media`): provider photos, served from `media.urbanpetly.com`.
+  Public read.
+- **Private bucket** (`urbanpetly-docs`): verification documents. No public read ever; access only
+  through signed URLs expiring within 5 minutes ([06-nfr.md](../06-nfr.md)).
 - Browser uploads via presigned URLs (ADR-006); images max 8 MB, documents max 10 MB.
 - Single VPS, one node, Dokploy-managed. Target availability 99.5%. RPO 24h, RTO 4h.
 - Verification documents are personal data under the DPDP Act 2023.
@@ -50,7 +51,7 @@ Apache-2.0. The S3 gateway implements the object, bucket, IAM and STS APIs on on
 SDK v3, the AWS CLI and rclone work unchanged. `weed mini` is auto-tuned for a single node, which is
 exactly our deployment shape. Kubeflow Pipelines adopted it as its default storage backend,
 replacing MinIO; it is run at petabyte scale elsewhere. Anonymous read for the public bucket is a
-one-liner: `s3.bucket.access -name media -user anonymous -access Read,List`.
+one-liner: `s3.bucket.access -name urbanpetly-media -user anonymous -access Read,List`.
 
 - (-) Configuration surface is larger than Garage's; the filer/volume/master split shows through
   even in single-node mode.
@@ -147,9 +148,10 @@ decision for the founder**, who owns hosting — see the open question added to
 
 ## Consequences
 
-- `S3_ENDPOINT`/`S3_*` env vars in [02-architecture.md](../02-architecture.md) §8 are unchanged;
-  nothing in application code knows which S3 implementation is behind them. That is the point — the
-  AWS SDK v3 boundary is what makes this ADR cheap to reverse.
+- The `S3_*` env vars in [02-architecture.md](../02-architecture.md) §8 stay generic — the single
+  `S3_BUCKET` splits into `S3_BUCKET_MEDIA` and `S3_BUCKET_DOCS`, and nothing else changes. No
+  application code knows which S3 implementation is behind them. That is the point: the AWS SDK v3
+  boundary is what makes this ADR cheap to reverse.
 - Local development uses the same SeaweedFS image in Docker Compose, so presigned-URL behaviour is
   identical locally and in production. Do not substitute a different S3 implementation locally.
 - One node means object storage is a single point of failure. Accepted at 99.5% availability; the

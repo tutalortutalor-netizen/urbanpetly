@@ -3,6 +3,11 @@
 Status values: **Accepted** (decided, build to it), **Proposed** (the Product Owner's recommendation, awaiting the founder's confirmation - build to it unless the founder says otherwise), **Superseded**.
 
 ## Decisions (ADR log)
+
+One sequence for every decision, product and technical. ADR-001..021 are recorded only in this table;
+ADR-022 onward also have a file each in [adr/](adr/). Claim a number by adding its row here in the same
+PR as the file.
+
 | ID | Decision | Date | Status |
 |---|---|---|---|
 | ADR-001 | Name: UrbanPetly, domain urbanpetly.com (also register .in) | 2026-10-18 | Accepted |
@@ -10,12 +15,12 @@ Status values: **Accepted** (decided, build to it), **Proposed** (the Product Ow
 | ADR-003 | Client-side rendered React (Vite). No Next.js. Prerender key SEO pages at build time | 2026-10-18 | Accepted |
 | ADR-004 | Node + TypeScript + Fastify, Zod schemas shared | 2026-10-18 | Accepted |
 | ADR-005 | MySQL 8 with Knex (migrations, seeds, raw SQL for spatial queries) | 2026-10-18 | Accepted |
-| ADR-006 | Self-hosted S3-compatible object storage on Dokploy; presigned uploads | 2026-10-18 | Accepted (product choice to be confirmed in a Tech Lead spike) |
+| ADR-006 | Self-hosted S3-compatible object storage on Dokploy; presigned uploads | 2026-10-18 | Accepted (product chosen in [ADR-023](adr/0023-object-storage-product-and-backups.md)) |
 | ADR-007 | Phone OTP login through the founder's SMS API, behind an `OtpSender` interface | 2026-10-18 | Accepted (API details pending - open question 1) |
 | ADR-008 | Launch in Delhi NCR; at-home service mode included in v1 | 2026-10-18 | Accepted |
 | ADR-009 | v1 has request-based bookings with no online payment | 2026-10-18 | Accepted (confirmed by the Product Owner as v1 scope; see ADR-021 for monetisation) |
 | ADR-010 | Email-only notifications in v1 | 2026-10-18 | Accepted |
-| ADR-011 | Maps: MapLibre/Leaflet with a free-tier tile and geocoding provider | 2026-10-18 | Proposed (provider to choose in spike) |
+| ADR-011 | Maps: MapLibre/Leaflet with a free-tier tile and geocoding provider | 2026-10-18 | Accepted (provider chosen in [ADR-024](adr/0024-map-tiles-and-geocoding-provider.md); Leaflet dropped) |
 | ADR-012 | Priority definitions: P0 = launch blocker, P1 = committed to launch but may slip, P2 = parking lot. **"v1" means P0 + P1.** | 2026-10-18 | Accepted |
 | ADR-013 | Priority corrections for consistency with 05-ux-spec and 08-delivery-plan: E2-S5 sort, E3-S3 call/WhatsApp and E8-S6 CSV import are raised to P0; "one review per customer per provider" is a P0 constraint folded into E5-S1 | 2026-10-18 | Accepted |
 | ADR-014 | Either party may mark an accepted request completed once the appointment window has passed, and a request auto-completes 48h after it | 2026-10-18 | Accepted |
@@ -26,6 +31,10 @@ Status values: **Accepted** (decided, build to it), **Proposed** (the Product Ow
 | ADR-019 | A provider is published after admin review of the profile. Verification documents are **not** required to publish; they are required only for the "Verified" badge | 2026-10-18 | Accepted |
 | ADR-020 | Thin-page rule: a locality x category page is prerendered and listed in the sitemap only when it has 3 or more published providers. Below that it is not indexed and canonicalises to the city x category page | 2026-10-18 | Accepted |
 | ADR-021 | No monetisation modelling in v1: no plans, commissions, invoicing or billing data. Revisit only after the enquiry volume target in 00-product-brief.md §7 is met | 2026-10-18 | Proposed |
+| ADR-022 | [Prerender SEO pages with React Router v8 framework mode (`ssr: false` + `prerender`)](adr/0022-prerender-approach-for-seo-pages.md) | 2026-10-18 | Accepted |
+| ADR-023 | [Object storage: SeaweedFS single node; rclone + mysqldump off-server encrypted backups](adr/0023-object-storage-product-and-backups.md) | 2026-10-18 | Accepted |
+| ADR-024 | [Maps: MapLibre GL JS + Geoapify for tiles and geocoding; Ola Maps as upgrade path](adr/0024-map-tiles-and-geocoding-provider.md) | 2026-10-18 | Accepted |
+| ADR-025 | [Sessions: host-only `__Host-` refresh cookie on `api.`, one session per audience](adr/0025-auth-sessions-across-subdomains.md) | 2026-10-18 | Accepted |
 
 ### Notes on the newer ADRs
 
@@ -40,11 +49,19 @@ Status values: **Accepted** (decided, build to it), **Proposed** (the Product Ow
 **ADR-020 (thin pages).** 5 cities x ~40 localities x 7 categories is over a thousand locality pages, most of which would be empty at launch. 06-nfr.md requires no soft-404s, so empty pages must not be indexed. Three providers is the threshold at which a listing page is worth landing on.
 
 ## Spikes assigned to the Tech Lead (Phase 0)
-1. Prerender approach: `vite-react-ssg` vs a Playwright snapshot script; how to serve per-provider meta for non-prerendered pages. Must also cover the ADR-020 thin-page rule and the nightly refresh in E9-S1/E9-S3.
-2. Object store product (MinIO status check, Garage, SeaweedFS) and backup approach.
-3. Map tiles and geocoding provider with acceptable free tier and terms for commercial use in India.
-4. Session design details (cookie domains across `provider.`/`admin.` subdomains).
-5. **New:** scheduled-job design for the jobs E4-S6, E4-S7, E9-S3 and E11-S3 depend on (request expiry, auto-completion, nightly sitemap, orphaned-upload cleanup) on a single-instance deployment.
+
+Spikes 1-4 are complete; each produced an ADR. Spike 5 is open.
+
+| # | Spike | Outcome |
+|---|---|---|
+| 1 | Prerender approach and per-provider meta for non-prerendered pages, covering the ADR-020 thin-page rule and the nightly refresh in E9-S1/E9-S3 | [ADR-022](adr/0022-prerender-approach-for-seo-pages.md) - React Router v8 framework mode; `vite-react-ssg` and Playwright snapshots rejected (Playwright kept as fallback) |
+| 2 | Object store product (MinIO status check, Garage, SeaweedFS) and backups | [ADR-023](adr/0023-object-storage-product-and-backups.md) - SeaweedFS; MinIO archived 2026-04 and rejected |
+| 3 | Map tiles and geocoding with commercial-use terms for India | [ADR-024](adr/0024-map-tiles-and-geocoding-provider.md) - Geoapify; MapTiler and Stadia free tiers forbid commercial use |
+| 4 | Session design across `provider.`/`admin.` subdomains | [ADR-025](adr/0025-auth-sessions-across-subdomains.md) - host-only `__Host-` cookie on `api.`, per-audience sessions |
+| 5 | **Open:** scheduled-job design for the jobs E4-S6, E4-S7, E9-S3 and E11-S3 depend on (request expiry, auto-completion, nightly sitemap, orphaned-upload cleanup) on a single-instance deployment | Not started |
+
+Each ADR lists what it still owes. ADR-022 in particular carries a **blocking Phase 1 validation**
+that must pass before SEO content work depends on prerendering.
 
 ## Spec gaps and conflicts found while finalising v1.0
 Resolved in this pass:
@@ -97,5 +114,10 @@ Each question below has the Product Owner's recommendation so that work is never
 | 10 | Hosting capacity: VPS size, region (India), and who manages server updates | Founder | India region for DPDP data-residency (06). Sizing and patching ownership are the founder's call; E12-S3 and E12-S5 cannot be finished without it | **Blocking for E12-S3/S5** |
 | 11 | **New:** do we publish a provider's phone number on the public profile, or only after sign-in? | Founder | Publish it. It is already public business information, hiding it damages SEO and the "contact fast" promise, and the privacy rule we actually need protects the *customer's* number (E4), not the provider's | No |
 | 12 | **New:** what is the target first-response time for the admin review queue (E8-S2)? | Founder | 1 working day. This is an operational commitment shown to providers after they submit, not a product feature | No |
+| 13 | **From Phase 0:** backup destination for the daily off-server copy (Backblaze B2, a second VPS, a Hetzner Storage Box) and who holds its credentials | Founder | Tech Lead: pick one with object versioning and write-and-list-only credentials. Until it is answered we have no backups, only a backup design ([ADR-023](adr/0023-object-storage-product-and-backups.md)) | **Blocking for E12 go-live** |
+| 14 | **From Phase 0:** does any India data-residency requirement, Survey of India licence or National Geospatial Policy obligation apply to our use of a foreign map and geocoding service? | Founder / legal | Tech Lead: build on Geoapify behind the `GeocodingProvider` port. If the answer is yes we switch to Ola Maps, which is an adapter change ([ADR-024](adr/0024-map-tiles-and-geocoding-provider.md)) | No (port makes it cheap to reverse) |
+| 15 | **From Phase 0:** confirm `urbanpetly.in` will only 301-redirect to `urbanpetly.com` and never serve an app | Founder | Tech Lead: redirect only. Serving `.in` makes it cross-*site* to `api.urbanpetly.com`, voiding the `SameSite=Lax` + `Origin`-check design and forcing CSRF tokens ([ADR-025](adr/0025-auth-sessions-across-subdomains.md)) - a cross-cutting auth change, not a DNS change | No, but answer before E1 ships |
+| 16 | **From Phase 0:** self-hosted object storage (ADR-006) versus a managed bucket | Founder | Tech Lead: raising it once, now, while it is cheap to change. Managed storage deletes most of [ADR-023](adr/0023-object-storage-product-and-backups.md) and half the backup work for a few dollars a month, at the cost of data-residency control and an extra DPDP processor to disclose. Absent an answer, self-hosting stands | No |
+| 17 | **From Phase 0:** the corporate npm proxy in the dev environment serves packages but 404s on `@pnpm/exe`, so `corepack` cannot install pnpm | Tech Lead | Workaround in place: install the `pnpm` JS package (`npm i -g pnpm`), which the proxy does serve. Confirm CI uses a registry without this gap | No |
 
-Questions 1-4 and 10 are external or legal dependencies: nothing in the product can resolve them, and no reasonable assumption makes them safe to launch without. Questions 5-9, 11 and 12 have working assumptions above and are being built to; the founder can overturn any of them at the cost of rework in the named stories.
+Questions 1-4, 10 and 13 are external or legal dependencies: nothing in the product can resolve them, and no reasonable assumption makes them safe to launch without. Questions 5-9, 11, 12 and 14-17 have working assumptions above and are being built to; the founder can overturn any of them at the cost of rework in the named stories.

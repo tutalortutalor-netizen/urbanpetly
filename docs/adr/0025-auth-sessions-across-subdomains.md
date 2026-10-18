@@ -1,4 +1,4 @@
-# ADR-015: Auth sessions across subdomains
+# ADR-025: Auth sessions across subdomains
 
 - Status: Accepted
 - Date: 2026-10-18
@@ -8,7 +8,7 @@
 
 ## Context
 
-Three browser apps and one API live on four hostnames
+Three browser apps, one API and the object-store read path live on five hostnames
 ([02-architecture.md](../02-architecture.md) §7):
 
 | Host | App |
@@ -28,7 +28,7 @@ What was unspecified, and what this ADR settles: **which host the cookie is scop
 three apps share one session, how CORS is configured for credentialed cross-origin requests, and
 what "CSRF protection" concretely means here.
 
-The key fact the design rests on: all four hostnames share the registrable domain `urbanpetly.com`,
+The key fact the design rests on: all five hostnames share the registrable domain `urbanpetly.com`,
 so requests between them are **same-site but cross-origin**. Same-site is why `SameSite=Lax` cookies
 are sent at all; cross-origin is why CORS with credentials is required.
 

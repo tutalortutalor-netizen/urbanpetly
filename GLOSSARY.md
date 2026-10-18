@@ -29,14 +29,15 @@ Terms are grounded in [docs/03-data-model.md](docs/03-data-model.md) and the ADR
 
 | Term | Meaning |
 |---|---|
-| **Audience** | Which app a session belongs to: `customer`, `provider` or `admin`. Each has its own cookie and its own session; a token's audience is checked separately from the user's role ([ADR-015](docs/adr/0015-auth-sessions-across-subdomains.md)) |
+| **Audience** | Which app a session belongs to: `customer`, `provider` or `admin`. Each has its own cookie and its own session; a token's audience is checked separately from the user's role ([ADR-025](docs/adr/0025-auth-sessions-across-subdomains.md)) |
 | **Session family** | A chain of rotated refresh tokens descending from one login. Presenting an already-used token revokes the whole family |
 | **Access token** | Short-lived JWT, held **in memory only**, sent as `Authorization: Bearer` |
 | **Refresh token** | Opaque random value in a host-only `__Host-` cookie on `api.urbanpetly.com`, stored hashed, rotated on every use |
-| **Prerender manifest** | The build-time list of paths to render to HTML, fetched from the API ([ADR-012](docs/adr/0012-prerender-approach-for-seo-pages.md)) |
+| **Prerender manifest** | The build-time list of paths to render to HTML, fetched from the API. The endpoint that produces it is also where the thin-page threshold is enforced ([ADR-022](docs/adr/0022-prerender-approach-for-seo-pages.md)) |
+| **Thin page** | A locality x category page with fewer than 3 published providers. Not prerendered, not in the sitemap, `noindex,follow`, canonical to the city x category page (ADR-020) |
 | **SPA fallback** | The single HTML file served for paths that were not prerendered, hydrated by the client router |
 | **Meta handler** | The API route that injects per-provider title, meta and JSON-LD into the SPA fallback for non-prerendered profiles |
-| **Presigned URL** | A time-limited S3 URL letting a browser upload or download one object directly. Uploads are never trusted on their declared `Content-Type` ([ADR-013](docs/adr/0013-object-storage-product-and-backups.md)) |
+| **Presigned URL** | A time-limited S3 URL letting a browser upload or download one object directly. Uploads are never trusted on their declared `Content-Type` ([ADR-023](docs/adr/0023-object-storage-product-and-backups.md)) |
 | **Media bucket** | `urbanpetly-media` - public read, provider photos, served from `media.urbanpetly.com` |
 | **Docs bucket** | `urbanpetly-docs` - private, verification documents, presigned GET only, 5-minute expiry |
 | **Public ID** | The ULID in `public_id`, used in URLs and API responses. Internal `id` values are never exposed |

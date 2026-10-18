@@ -1,9 +1,10 @@
-# ADR-012: Prerender approach for SEO pages
+# ADR-022: Prerender approach for SEO pages
 
 - Status: Accepted
 - Date: 2026-10-18
 - Deciders: Tech Lead (spike), founder (approval)
 - Refines: ADR-003 (client-side rendered React, no Next.js, prerender key SEO pages)
+- Implements: ADR-020 (thin-page rule for locality x category pages)
 - Spike: SAM-4 item 1
 
 ## Context
@@ -115,6 +116,15 @@ and must not be indexed, so they get no prerendering and no framework mode.
 This keeps the build deterministic given a manifest, and keeps the "which pages are worth
 prerendering" rule in the API next to the data, where it belongs.
 
+**The manifest endpoint owns the ADR-020 thin-page rule.** A locality x category path is included
+only when that locality and category have **3 or more published providers**; below the threshold the
+page is not prerendered, not in the sitemap, and renders with `<link rel="canonical">` pointing at the
+city x category page plus `<meta name="robots" content="noindex,follow">`. Putting the threshold in
+the endpoint rather than the build script means prerendering, the sitemap job (E9-S3) and the runtime
+canonical tag all read one implementation and cannot drift apart — which is the failure mode that
+produces the soft-404s 06-nfr.md forbids. The nightly sitemap job and the next build therefore pick
+up a locality crossing the threshold automatically; no manual list is maintained.
+
 ### Per-provider meta for non-prerendered pages
 
 The SPA fallback is a single HTML file and therefore carries generic meta. Provider profiles outside
@@ -128,15 +138,21 @@ the top N get correct meta from a small API-side handler:
 - Responses carry `Cache-Control: public, s-maxage=300, stale-while-revalidate=86400`.
 
 The handler does string injection into a fixed placeholder, not HTML parsing. All injected values are
-HTML-escaped; JSON-LD is serialised with `<` escaped to `<`. Provider-controlled text reaching a
-`<script>` block is the obvious XSS route here and the handler is the only place it can happen, so it
-gets dedicated tests.
+HTML-escaped. Inside the JSON-LD `<script>` block, `<` is additionally serialised as its `<`
+escape (and `>` as `>`), so a provider display name containing `</script>` cannot close the block
+early. Provider-controlled text reaching a `<script>` block is the obvious XSS route here and the
+handler is the only place it can happen, so it gets dedicated tests — including that exact payload.
 
 ### Sitemap
 
 Unchanged from §6: nightly job generates `sitemap.xml` from the DB. The sitemap lists **all**
-published providers, not just prerendered ones — prerendering is a performance and crawl-budget
-optimisation, not an indexing gate.
+published providers, not just prerendered ones — for provider profiles, prerendering is a performance
+and crawl-budget optimisation, not an indexing gate.
+
+Locality x category pages are the one exception, and it is a product decision rather than a
+performance one: ADR-020 keeps a page with fewer than 3 published providers out of both the prerender
+manifest and the sitemap. The job reads the same threshold from the manifest endpoint, so "prerendered"
+and "in the sitemap" cannot disagree for these pages.
 
 ## Consequences
 
@@ -161,6 +177,9 @@ optimisation, not an indexing gate.
 3. A provider profile *not* in the manifest returns 200 with a unique `<title>` and valid JSON-LD.
 4. An unknown provider slug returns 404.
 5. Client-side navigation between a prerendered and a non-prerendered route works in both directions.
+6. A locality x category page with fewer than 3 published providers is absent from both the manifest
+   and the sitemap, and serves `noindex,follow` with a canonical pointing at the city x category page
+   (ADR-020). Crossing the threshold adds it on the next build and the next nightly sitemap run.
 
 If (1) or (2) fails and cannot be fixed within a day, fall back to option C and supersede this ADR.
 

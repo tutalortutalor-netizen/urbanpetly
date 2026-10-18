@@ -1,4 +1,4 @@
-# ADR-014: Map tiles and geocoding provider
+# ADR-024: Map tiles and geocoding provider
 
 - Status: Accepted
 - Date: 2026-10-18
@@ -72,7 +72,7 @@ is a fine thing for the founder to have at some point; it is not a thing to bloc
 
 Protomaps or OpenFreeMap self-hosted would eliminate vendor terms risk entirely and cost only
 storage. It also adds a tile pipeline, periodic OSM extract refreshes and another service to the VPS
-that ADR-013 is already asking a lot of — and it provides no geocoding, so we would still need a
+that ADR-023 is already asking a lot of — and it provides no geocoding, so we would still need a
 geocoding vendor. Revisit if tile costs ever become material, which at our volume they will not.
 
 ## Decision
@@ -92,7 +92,9 @@ code:
 
 - `GeocodingProvider` — `search(query, bias)`, `reverse(lat, lng)`, `autocomplete(query, bias)`.
   One implementation per vendor, selected by `MAPS_PROVIDER` env var.
-- Tile style URL comes from config (`MAP_STYLE_URL`, `MAP_TILE_KEY`), never hardcoded in a component.
+- Tile style URL comes from config (`VITE_MAP_STYLE_URL`, `VITE_MAP_TILE_KEY`), never hardcoded in a
+  component. The `VITE_` prefix is load-bearing: Vite only exposes prefixed variables to the browser
+  bundle, and the prefix is itself the reader's signal that these two values ship to the client.
 
 Swapping Geoapify for Ola Maps should be a new adapter plus env changes, touching no feature code.
 That is the actual deliverable of this ADR; the vendor is the replaceable part.
@@ -147,8 +149,9 @@ licence obligation, so it belongs in the UX spec and in the component, not in a 
 
 - ADR-011 is now concrete: MapLibre GL JS + Geoapify. Leaflet is dropped from the options; one map
   library, vector tiles.
-- New env vars: `MAPS_PROVIDER`, `MAP_STYLE_URL`, `MAP_TILE_KEY` (public), `GEOCODING_API_KEY`
-  (secret). Added to [02-architecture.md](../02-architecture.md) §8.
+- New env vars, added to [02-architecture.md](../02-architecture.md) §8: `MAPS_PROVIDER` and
+  `GEOCODING_API_KEY` server-side (the latter a real secret), `VITE_MAP_STYLE_URL` and
+  `VITE_MAP_TILE_KEY` in the frontend builds (public by necessity, domain-restricted).
 - A locality seed file for Delhi NCR becomes a Phase 1 deliverable and a dependency of search. It is
   content work as much as code work and needs an owner.
 - The map is not on the critical rendering path: MapLibre is code-split and the results list renders
