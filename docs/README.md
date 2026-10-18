@@ -23,6 +23,7 @@ Pet parents find, compare and contact providers; providers get a listing and lea
 | 08 | [Delivery plan](08-delivery-plan.md) | Phases, milestones, agent ownership |
 | 09 | [Decisions and open questions](09-decisions-and-open-questions.md) | ADR log, pending items |
 | 10 | [Git workflow and review policy](10-git-workflow.md) | Feature branches, PRs, review chain (mandatory) |
+| - | [Traceability matrix](traceability.md) | Acceptance criteria mapped to tests (owned by QA, grows with the product) |
 
 ## Rules for agents working from this spec
 1. This spec is the source of truth. If code and spec disagree, raise it; do not silently diverge.
