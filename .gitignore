@@ -147,3 +147,10 @@ vite.config.ts.timestamp-*
 
 # Turbo Repo
 .turbo
+
+# React Router framework mode (apps/web): generated route types and build output
+.react-router/
+apps/web/build/
+
+# Per-developer Claude Code settings; the shared ones belong in .claude/settings.json
+.claude/settings.local.json

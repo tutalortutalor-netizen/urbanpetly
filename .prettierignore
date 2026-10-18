@@ -1,0 +1,12 @@
+node_modules
+dist
+coverage
+build
+.react-router
+pnpm-lock.yaml
+*.tsbuildinfo
+.claude
+
+# The spec in docs/ is prose owned by the Product Owner. Prettier's markdown
+# reflow would rewrite every file, so Markdown is left to .editorconfig.
+*.md

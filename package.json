@@ -1,0 +1,29 @@
+{
+  "name": "urbanpetly",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "UrbanPetly - pet services aggregator for Delhi NCR",
+  "packageManager": "pnpm@12.14.0",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "build:packages": "pnpm --filter \"./packages/**\" run build",
+    "dev": "pnpm run build:packages && pnpm -r --parallel --stream run dev",
+    "build": "pnpm -r run build",
+    "typecheck": "pnpm run build:packages && pnpm -r run typecheck",
+    "test": "pnpm run build:packages && pnpm -r run test",
+    "test:watch": "pnpm -r --parallel --stream run test:watch",
+    "lint": "eslint . --max-warnings 0",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@urbanpetly/config": "workspace:*",
+    "eslint": "catalog:",
+    "prettier": "catalog:",
+    "typescript": "catalog:"
+  }
+}
