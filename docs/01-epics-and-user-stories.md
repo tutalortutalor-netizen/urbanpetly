@@ -145,7 +145,9 @@ Acceptance criteria
 - Given a provider offers at-home service with a service radius, when my location is inside that radius, then the provider appears and is tagged "At home".
 - Given a provider only serves customers at its own premises, when I search from a location outside the radius, then it does not appear.
 - Given I change the radius or the locality, when the results reload, then the page address reflects the change.
-- Given at-home providers that charge a travel fee for my area, when I view their card, then the extra fee is indicated so the price is not misleading.
+- Given an at-home provider that charges a travel fee for any of its areas, when I view its card in the results, then the card says "travel fee may apply" next to the price so the price is not misleading. The card does **not** show an amount.
+- Given I want to know the actual amount, when I open that provider's profile, then the exact fee for each area it serves is shown there (E3-S2).
+- Given an at-home provider that charges no travel fee anywhere, when I view its card, then no travel-fee wording appears.
 
 Out of scope
 - Live travel time or traffic-aware distance (straight-line distance only).
@@ -240,7 +242,7 @@ As a pet parent, I want to know whether a provider comes to my home and where th
 Acceptance criteria
 - Given a provider's services, when I view the services list, then each service is tagged "At our place", "At your home" or "Both".
 - Given a provider offers at least one at-home service, when I open the profile, then a "Home visits" section lists the areas served, as pincodes and/or localities and/or a radius in plain words ("Home visits within 8 km of Sector 56, Gurgaon").
-- Given a home-visit area carries an extra travel fee, when I view that area, then the fee is shown next to it.
+- Given a home-visit area carries an extra travel fee, when I view that area, then the exact fee is shown next to it. The profile is the only place an exact travel fee is shown; search cards carry the generic "travel fee may apply" wording instead (E2-S3).
 - Given I have set my location or picked a locality, when I open a profile that offers home visits, then I see a clear "Serves your area" or "Does not serve your area yet" line.
 - Given a provider offers no at-home service, when I open the profile, then no "Home visits" section appears anywhere.
 - Given a service is marked inactive by the provider, when I open the profile, then it is not listed.
@@ -291,14 +293,25 @@ Out of scope
 | E4-S2 | As a provider I get an email and see the request in my dashboard | P0 |
 | E4-S3 | As a provider I can accept, decline (with reason) or propose another time | P0 |
 | E4-S4 | As a customer I can see request status and cancel a pending request | P0 |
-| E4-S5 | Customer is emailed on provider's response | P1 |
-| E4-S6 | Request auto-expires after 72h with no response and the customer is told | P1 |
+| E4-S5 | Customer is emailed on provider's response | P0 (raised, ADR-027) |
+| E4-S6 | Request auto-expires after 72h with no response and the customer is told | P0 (raised, ADR-027) |
 | E4-S7 | Either party can mark an accepted request as completed; it auto-completes 48h after the appointment | P0 (new, ADR-014) |
 
 Shared rules for E4
 - Status flow: `pending -> accepted | declined | expired | cancelled`, and `accepted -> completed | cancelled`. No other transition is allowed.
 - Only a `completed` request unlocks a review (E5-S1).
 - The customer's phone number is disclosed to the provider **only after the provider accepts**. Before that, the provider sees the customer's first name and the request details only (06-nfr.md).
+- **End of the appointment window (ADR-028).** Several criteria turn on when a request's appointment is over. All four time-window choices in E4-S1 have a defined end, in India Standard Time, on the request's appointment date:
+
+  | Time window chosen | Window ends at |
+  |---|---|
+  | Morning | 12:00 IST |
+  | Afternoon | 17:00 IST |
+  | Evening | 21:00 IST |
+  | A specific time | that time plus 2 hours IST |
+
+  Wherever a criterion says "the appointment window has passed" or "the end of the appointment window", it means this instant. A specific time of 22:30 therefore ends at 00:30 the following day.
+- **The 72-hour response window** runs from the moment the request is sent, or from the moment the provider's most recent proposed time is recorded (E4-S3), whichever is later.
 
 ### E4-S1 - Send an enquiry or booking request
 As a signed-in pet parent, I want to send a provider a structured request, so that they have everything they need to answer me.
@@ -375,15 +388,55 @@ Out of scope
 - Cancellation fees or no-show handling.
 - Reminders before an appointment (P2).
 
+### E4-S5 - Customer is told the provider's answer
+As a pet parent, I want to hear back as soon as the provider answers, so that I am not refreshing the site to find out.
+
+Raised to P0 (ADR-027): E4-S3 promises "the customer is told" on a P0 screen, so the telling cannot sit in a story that may slip.
+
+Acceptance criteria
+- Given a request of mine, when the provider accepts it, then I am emailed within 5 minutes, and the email names the provider, the service, the date and time window, the mode, the provider's phone number, and links to the request.
+- Given a request of mine, when the provider declines it, then I am emailed within 5 minutes with the reason in plain language and a link to similar providers, and the email contains no suggestion that I should contact them anyway.
+- Given a request of mine, when the provider proposes another date and time, then I am emailed within 5 minutes with the proposed date and time, and the email links me to the request where I can accept it.
+- Given I have no email address on file, when the provider answers, then nothing is sent, nothing errors, and the answer is still visible in my request history (E4-S4).
+- Given the provider answers, when I open my request history instead of my email, then the status is already up to date - the email is a notification, never the only route to the information.
+- Given a provider accepts and then I cancel, when the emails are compared, then each one reflects the state at the time it was sent and no email contradicts the current status shown in the product.
+- Given any of these emails, when the provider has not accepted, then it contains nothing about the provider that is not already public.
+
+Out of scope
+- SMS or WhatsApp versions of these notifications (parking lot, ADR-016).
+- Per-user preferences for turning these emails off (E10-S2; these are transactional and not optional in v1).
+- Reminding the customer about an upcoming appointment (P2).
+
+### E4-S6 - A request with no answer expires
+As a pet parent, I want a request nobody answered to close itself and tell me, so that I stop waiting and go and find someone else.
+
+Raised to P0 (ADR-027): E4-S1 shows every customer a "the provider has 72 hours to reply" promise and E4-S2 shows every provider a countdown, both on P0 screens. Without expiry those are promises the product does not keep.
+
+Acceptance criteria
+- Given a pending request, when 72 hours have passed since the start of its response window (see "Shared rules for E4") with no response from the provider, then its status becomes "Expired" and neither party can act on it any further.
+- Given a request expires, when it does, then the customer is emailed within 15 minutes to say the provider did not reply in time, with a link back to search for other providers; the provider is not emailed.
+- Given the provider proposed a new time, when 72 hours pass from that proposal with no answer from the customer, then the request expires in exactly the same way and the customer's expiry email says the proposal lapsed.
+- Given a pending request, when the provider responds with one minute to spare, then it does not expire and the response stands.
+- Given a request the customer cancelled, or that the provider already answered, when the 72 hours pass, then nothing happens to it and no expiry email is sent.
+- Given an expired request, when either party opens it, then the timeline shows that it expired and when, and no accept, decline or cancel action is offered.
+- Given an expired request, when the customer opens it, then no review option is offered (only completed requests unlock a review).
+- Given the job that expires requests does not run for several hours, when it next runs, then every request that should have expired expires, each with one email and no duplicates.
+
+Out of scope
+- Nudging the provider before the window closes (P2).
+- A provider-configurable response window (72 hours is fixed in v1).
+- Automatically re-sending the request to other providers.
+
 ### E4-S7 - Completing a request
 As a pet parent and as a provider, I want a request to be marked as completed, so that the visit is closed off and the customer can leave a review.
 
 Rationale: in the original spec only the provider could mark a request complete, which meant a provider could block an unflattering review by never completing it. Reviews must not depend on the reviewed party's cooperation.
 
 Acceptance criteria
-- Given an accepted request whose appointment date and time window have passed, when either the customer or the provider marks it as completed, then its status becomes "Completed" and both parties see who marked it and when.
-- Given an accepted request whose appointment has not yet passed, when either party tries to mark it completed, then the action is not offered.
+- Given an accepted request whose end of the appointment window (see "Shared rules for E4") has passed, when either the customer or the provider marks it as completed, then its status becomes "Completed" and both parties see who marked it and when.
+- Given an accepted request whose end of the appointment window has not yet passed, when either party tries to mark it completed, then the action is not offered.
 - Given an accepted request that neither party has acted on, when 48 hours have passed since the end of the appointment window, then it is automatically marked completed, and the timeline records that it was completed automatically.
+- Given an accepted request for the morning window on a given date, when the clock passes 12:00 IST on that date, then the "Mark completed" action becomes available to both parties and auto-completion is due at 12:00 IST two days later.
 - Given a request is completed, when the customer opens it, then they are invited to leave a review (E5-S1).
 - Given a request is completed, when either party tries to cancel it, then the action is refused.
 - Given an accepted request that did not happen, when either party cancels it before the auto-completion window closes, then it becomes "Cancelled" and no review is possible.
@@ -403,9 +456,9 @@ Out of scope
 | E5-S2 | Reviews show on the profile and update the average rating | P0 |
 | E5-S3 | Provider can publicly reply once to a review | P1 |
 | E5-S4 | Anyone signed in can report a review; admin moderates | P0 |
-| E5-S5 | Editable for 7 days | P1 |
+| E5-S5 | Editable for 7 days | P0 (raised, ADR-027) |
 
-The "one review per customer per provider" rule is a P0 constraint and is part of E5-S1 (ADR-013). Only the 7-day edit window remains P1.
+The "one review per customer per provider" rule is a P0 constraint and is part of E5-S1 (ADR-013). The 7-day edit window is also P0 (ADR-027): E5-S1 tells a repeat customer to "update my existing one instead", and E5-S2 states that an edited review changes the average - both are P0 criteria that cannot be met without it.
 
 ### E5-S1 - Leave a review after a completed request
 As a pet parent, I want to rate and review a provider I actually used, so that other parents get an honest picture.
@@ -460,6 +513,27 @@ Out of scope
 - Automatic hiding after N reports.
 - Reporting a provider's reply (handled through the same queue in P1).
 - Appeals process.
+
+### E5-S5 - Edit my review for 7 days
+As a pet parent, I want to change or remove my review for a short while after writing it, so that I can fix a mistake or soften something I wrote in the heat of the moment.
+
+Raised to P0 (ADR-027): two P0 criteria already depend on it (E5-S1 "update my existing one instead", E5-S2 "a review edited within its edit window changes the average").
+
+Acceptance criteria
+- Given a review I posted less than 7 days ago, when I open it, then I am offered "Edit" and "Delete", and I can see how long I have left to change it.
+- Given I edit my review within the window, when I save, then the new rating, title, body and photos replace the old ones on the provider's profile, the average rating and star breakdown are recalculated, and the review is marked as edited.
+- Given I delete my review within the window, when I confirm, then it disappears from the provider's profile and the average rating and review count no longer include it.
+- Given a review I posted more than 7 days ago, when I open it, then no edit or delete action is offered and I am told the window has closed.
+- Given I complete another request with a provider I have already reviewed, when the earlier review is still inside its 7-day window, then I am offered to update it (E5-S1); when the window has closed, then I am told my existing review stands and no second review is created.
+- Given my edited review contains contact details, when I save it, then it is held for moderation exactly as a new review would be (E5-S1) and the previous version stays public meanwhile.
+- Given an admin hid my review, when I try to edit it inside the window, then the edit is refused and I am shown why it was hidden.
+- Given someone else's review, when I try to edit or delete it, then the attempt is refused.
+- Given I edit my review, when the provider views it, then the provider sees the current version only and is not emailed again.
+
+Out of scope
+- An edit history visible to customers or providers (the audit trail is internal, E8-S8).
+- Extending or reopening the window on request.
+- Editing a review's attached photos individually (re-attach the set).
 
 ---
 
@@ -526,13 +600,14 @@ As a pet parent, I want to delete my account and personal data, so that I can ex
 
 Acceptance criteria
 - Given I am signed in, when I open "Delete my account", then I am shown in plain English exactly what will be deleted, what will be kept, and that the action cannot be undone.
-- Given I confirm the deletion, when it completes, then I am signed out, cannot sign in again with that number, and my name, email address, addresses, pets and pet photos are gone.
+- Given I confirm the deletion, when it completes, then I am signed out, cannot get back into the deleted account, and my name, email address, addresses, pets and pet photos are gone.
+- Given my account is deleted, when I sign in again with the same mobile number, then signing in still works and I land in a brand-new empty account - the number is never blocked from the product, only detached from everything the old account held.
 - Given I had written reviews, when my account is deleted, then the reviews remain but are attributed to "Former user" and contain nothing that identifies me.
 - Given I had sent requests, when my account is deleted, then the providers' records of those requests no longer carry my name, phone number or address, while the fact that a request happened is kept for the provider's own history.
 - Given I have a pending or accepted request, when I start the deletion, then I am told those requests will be cancelled and the providers notified, and I must confirm.
 - Given the deletion completes, when I look for my data anywhere in the product, then it is not visible to customers, providers or admins.
 - Given I ask to delete my account, when the request is processed, then it completes within the time stated in the privacy policy and I receive a confirmation if I had an email address on file.
-- Given a deleted account, when someone signs up later with the same number, then they get a brand-new empty account with no trace of the previous one.
+- Given a deleted account, when someone signs up later with the same number, then they get a brand-new empty account with no trace of the previous one - no name, no addresses, no pets, no request history and no reviews carried over.
 
 Out of scope
 - Downloading a copy of my data before deletion (P1, right of access).
@@ -554,6 +629,22 @@ Out of scope
 | E7-S8 | Basic stats: profile views, calls, enquiries (30 days) | P2 |
 | E7-S9 | Multiple staff users per business | P2 |
 
+Shared rules for E7 - which edits need admin review (ADR-026)
+
+A published listing has two kinds of editable field. The split below is the single source of truth for the whole epic; no story in E7, E8 or elsewhere may widen or narrow it.
+
+| | Fields | What happens when the provider of a published listing edits one |
+|---|---|---|
+| **Gated** - admin review before the change is public | Business name, description, categories, address line, map pin, locality, pincode, contact phone number, WhatsApp number, email address, website, and **adding a photo** | The edit is held as a pending change, the current public version stays live and unchanged, and the item appears in the admin review queue (E8-S2). |
+| **Ungated** - public as soon as it is saved | Services (add, edit, deactivate, delete), prices and price units, durations, service mode, opening hours, holidays and temporary closures, service areas and travel fees, **photo ordering** including which photo is the cover, and **removing a photo** | The change is live immediately. No review, no queue item. |
+
+- The line is identity and claims we have vouched for (gated) versus day-to-day trading information a provider must be able to correct the same morning (ungated).
+- Photos are deliberately asymmetric. Adding one puts unvetted imagery in front of customers, so it waits for review; removing one is how a provider fixes a wrong, embarrassing or privacy-breaking photo, so it must never wait for us. Reordering only rearranges photos we have already approved.
+- A provider may have at most one pending **field** change at a time; saving again replaces the pending one, which has not been reviewed yet. Added **photos** are the exception: each queues and is approved or rejected on its own, so one slow photo never holds up the rest.
+- Ungated edits stay live while a gated change is pending. The two never block each other.
+- A listing that is not yet public (draft, submitted, or rejected and being reworked) has no gated fields - nothing is public, so everything is edited freely until it is submitted.
+- Edits made by an admin are never gated, on any field (E8-S5).
+
 ### E7-S1 - Provider sign-up and business profile
 As a pet business owner, I want to list my business myself, so that pet parents can find me.
 
@@ -569,7 +660,9 @@ Acceptance criteria
 - Given my submitted profile is approved, when the approval happens, then my listing becomes public and I am emailed.
 - Given my submitted profile is rejected, when the rejection happens, then I see the reason in my dashboard, my listing stays private, and I can edit and resubmit (ADR-017).
 - Given a business name that already exists at a similar address, when I submit, then the admin queue flags it as a possible duplicate (E8-S2).
-- Given my listing is public, when I edit a field that affects what customers see, then the change goes back through review before it is public, and the current public version stays live meanwhile.
+- Given my listing is public, when I edit a **gated** field (see "Shared rules for E7"), then the change goes back through review before it is public, and the current public version stays live meanwhile.
+- Given my listing is public, when I edit an **ungated** field, then the change is public as soon as I save it and no review queue item is created.
+- Given I have a gated change waiting for review, when I open my dashboard, then I can see exactly which fields are pending, what the live value still is, and that I can withdraw the change.
 
 Out of scope
 - Verification documents (E7-S7) - a business can be published without them, it simply is not "Verified" (ADR-019).
@@ -587,7 +680,7 @@ Acceptance criteria
 - Given a listing that has already been claimed, when I try to claim it, then I am told it is already claimed and offered a way to report a mistake.
 - Given I have a claim pending on a listing, when I start another claim on the same listing, then no second claim is created.
 - Given I claim a listing successfully, when I open my dashboard, then I can edit everything about it exactly as if I had created it (E7-S1, S3, S4, S5).
-- Given a listing I have just claimed, when customers view it, then the information that was already there stays live while I edit, and my edits go through review (E7-S1).
+- Given a listing I have just claimed, when customers view it, then the information that was already there stays live while I edit, and my edits follow the gated / ungated split in "Shared rules for E7" exactly as they would on a listing I created myself.
 
 Out of scope
 - Transferring a listing from one owner to another (admin does this manually in v1).
@@ -607,7 +700,8 @@ Acceptance criteria
 - Given I define a service area, when I save it, then my public profile shows it in plain words and the "At home" tag appears on my cards in search (E2-S3).
 - Given I reorder my services, when I save, then my public profile lists them in that order.
 - Given I delete a service that a pending request refers to, when I confirm, then the service is removed from my profile and the request still shows what was originally asked for.
-- Given I change a price, when I save, then the new price appears on my public profile without a further admin review.
+- Given I change a price, when I save, then the new price appears on my public profile immediately without a further admin review - prices are ungated ("Shared rules for E7").
+- Given I add, edit, deactivate or delete a service, or change a service area or travel fee, when I save, then the change is public immediately and no review queue item is created.
 
 Out of scope
 - Per-pet-size or per-breed pricing tiers.
@@ -620,10 +714,12 @@ As a provider, I want good photos on my listing, so that parents trust what they
 
 Acceptance criteria
 - Given my dashboard, when I upload a photo, then only JPEG, PNG and WebP files up to 8 MB are accepted and anything else is rejected with a clear message (06-nfr.md).
-- Given I upload a photo, when it is processing, then I see progress, and when it is ready it appears in my gallery.
-- Given I have 20 photos, when I try to upload a 21st, then I am told the limit and asked to remove one first.
-- Given several photos, when I reorder them, then the first one becomes my cover photo on cards and at the top of my profile.
-- Given a photo, when I delete it, then it disappears from my public profile immediately.
+- Given I upload a photo, when it is processing, then I see progress, and when it is ready it appears in my dashboard gallery marked "Waiting for review" and is not yet on my public profile ("Shared rules for E7").
+- Given a photo I have uploaded, when an admin approves it, then it appears on my public profile and the "Waiting for review" marker is gone; when an admin rejects it, then I see the reason in my dashboard and it never becomes public.
+- Given my listing has never been published, when I upload photos during onboarding, then they are reviewed as part of the whole profile submission (E7-S1) rather than one by one.
+- Given I have 20 photos counting those waiting for review, when I try to upload a 21st, then I am told the limit and asked to remove one first.
+- Given several photos, when I reorder them, then the first one becomes my cover photo on cards and at the top of my profile immediately - ordering is ungated.
+- Given a photo, when I delete it, then it disappears from my public profile immediately, with no review step, whether or not it had been approved.
 - Given a photo containing location information, when it is published, then that information has been removed (06-nfr.md).
 - Given a very large photo, when it is published, then smaller versions are served to small screens so the page stays fast (06-nfr.md).
 - Given an upload fails or is abandoned, when I return to the gallery, then I do not see a broken or half-uploaded photo.
@@ -648,6 +744,7 @@ Acceptance criteria
 - Given a closure end date before its start date, when I save, then I see an inline error.
 - Given I am open 24 hours on a day, when I set it, then the profile says "Open 24 hours" rather than "00:00-23:59".
 - Given I have not set any hours, when a customer views my profile, then it says "Hours not provided" rather than showing me as closed, and I am excluded from the "Open now" filter.
+- Given my listing is public, when I change my hours or add a closure, then the change is on my profile immediately with no admin review - hours and closures are ungated ("Shared rules for E7").
 
 Out of scope
 - Per-service hours.
@@ -705,7 +802,8 @@ As an admin, I want to check listings before they go public, so that the directo
 
 Acceptance criteria
 - Given a provider has submitted a new profile, when I open the review queue, then it appears with the business name, categories, location, services, photos and who submitted it, oldest first.
-- Given a provider has edited a live profile, when I open the queue item, then I see the current public version and the proposed version side by side with the changes highlighted.
+- Given a provider has edited a gated field on a live profile ("Shared rules for E7"), when I open the queue item, then I see the current public version and the proposed version side by side with the changes highlighted, and only gated fields appear in the diff.
+- Given a provider has added photos to a live profile, when I open the queue item, then each new photo is shown and I can approve or reject it with a reason.
 - Given a queue item, when I approve it, then the listing becomes public (or the edit goes live), the provider is emailed, and the item leaves the queue.
 - Given a queue item, when I reject it, then I must give a reason, the listing stays private (or the live version stays unchanged), the provider sees the reason and can resubmit, and the item leaves the queue (ADR-017).
 - Given a listing flagged as a possible duplicate, when I open it, then the likely duplicates are listed so I can compare before deciding.
@@ -759,24 +857,33 @@ Out of scope
 ### E8-S6 - CSV import of listings
 As an admin, I want to load many listings at once from a spreadsheet, so that we can reach useful coverage before launch.
 
-Raised to P0 because the Phase 1 exit criterion in 08-delivery-plan.md ("a visitor can find and view seeded providers on staging") depends on having content.
+Raised to P0 (ADR-013) because of the supply target, not the Phase 1 exit criterion. Phase 1's exit ("a visitor can find and view seeded providers on staging") is already met by E12-S7 seed data plus hand-entry in E8-S5. What hand-entry cannot reach is the 500-listing coverage target in 00-product-brief.md §7: at a realistic few minutes per listing that is weeks of admin typing, and the Phase 4 plan of onboarding the first ~50 providers by hand only underlines the gap. Import is how the directory gets to launch size, so it blocks launch.
 
 Acceptance criteria
 - Given a CSV file in the documented format, when I upload it as a dry run, then nothing is saved and I see how many rows would be created, how many updated, and how many rejected.
 - Given a dry run, when rows are rejected, then I see each rejected row number with the reason in plain English (missing business name, unknown city, invalid pincode, bad price).
 - Given a dry run I am happy with, when I confirm the import, then exactly the rows the dry run said would be created or updated are created or updated, and the rejected ones are skipped.
 - Given an imported listing, when it is created, then it is unclaimed and published, exactly as if I had created it by hand (E8-S5).
+- Given an import, when a listing is created or updated by it, then that listing records where its information came from, taken from a source column in the file or from a single source I give for the whole file; the import is refused if neither is present. The source is stored for our records and never shown publicly (00-product-brief.md §6, E8-S5).
+- Given an import, when each listing is created or updated, then the listing also records which import batch did it, so a batch can be found again afterwards.
 - Given a CSV with a row whose business name and address match an existing listing, when I import, then that row updates the existing listing rather than creating a duplicate, and the summary says so.
 - Given a CSV that is not in the expected format at all, when I upload it, then I am told what columns are expected and nothing is imported.
 - Given an import that fails part-way, when I look at the result, then either everything in the batch was applied or nothing was, never a partial mess.
 - Given a completed import, when I open the result, then I can download a report of what happened for every row.
 - Given an import, when it completes, then it is recorded with my identity, the file name, the counts and the time (E8-S8).
 - Given a CSV with 1000 rows, when I import it, then the back office stays usable and I am told when the import has finished.
+- Given a finished import I should not have run, when I open it and choose "Undo this import", then in one confirmed action every listing the batch **created** is unpublished - it leaves search, its profile address returns "not found", and it is back in draft. Nothing is deleted outright: a customer may already have enquired, and that history must survive (ADR-030).
+- Given the same undo, when the batch had also **updated** existing listings, then those are not touched automatically; I am shown the list of them with the values each one held before the import, so I can put any of them back by hand.
+- Given an undone import, when I look at it afterwards, then it is clearly marked as undone, with who undid it and when, and the undo action is not offered a second time.
+- Given a listing the batch created that a provider has since claimed, when I undo the import, then that listing is **not** unpublished; it is listed as skipped with the reason, because it now belongs to someone.
+- Given an undo, when it completes, then it is recorded with my identity, the batch and the time (E8-S8).
 
 Out of scope
 - Importing photos, opening hours or reviews.
 - Scheduled or automatic imports from an external feed.
 - Exporting listings to CSV (P1).
+- Automatic rollback of the rows an import **updated** (restored by hand from the before-values, ADR-030).
+- Undoing an import after a later import has changed the same listings (the admin resolves that by hand).
 
 ---
 
@@ -794,8 +901,11 @@ As a pet parent searching Google, I want to land on a useful UrbanPetly page, so
 
 Acceptance criteria
 - Given a city and category combination with at least one published provider, when a crawler that does not run JavaScript fetches the page, then the returned HTML already contains the page title, one H1, an introduction paragraph and the list of providers with their names, localities and starting prices.
-- Given a locality, category and city combination with at least 3 published providers, when it is fetched the same way, then the same applies (ADR-020).
-- Given a locality and category combination with fewer than 3 published providers, when it is fetched, then it is not prerendered, it is excluded from the sitemap, it tells search engines not to index it, and it points search engines at the city and category page instead (ADR-020).
+- Given a locality, category and city combination with at least 3 published providers, when it is fetched the same way, then the same applies (ADR-029).
+- Given a locality and category combination with fewer than 3 published providers, when a crawler that does not run JavaScript fetches it, then the returned HTML carries that page's own title and meta description and a canonical address pointing at the matching city and category page; the page is **not** marked "do not index", and it is not in the sitemap (ADR-029).
+- Given such a below-threshold page, when a person opens it in a browser, then it is a normal working page showing the one or two providers it does have, not an error and not a redirect.
+- Given a below-threshold page crosses to 3 published providers, when the next scheduled refresh runs, then it is prerendered, enters the sitemap, and its canonical becomes its own address.
+- Given a page that is prerendered and in the sitemap, when it is fetched, then its canonical is its own address and never the city and category page.
 - Given any prerendered page, when I open it in a browser, then it becomes a normal interactive page - filters, sorting and paging all work.
 - Given two different prerendered pages, when I compare them, then their titles, meta descriptions and introduction text are distinct and name the actual city, locality and category.
 - Given a prerendered page, when it loads on a throttled mobile connection, then it meets the Core Web Vitals budgets in 06-nfr.md.
@@ -828,7 +938,7 @@ Out of scope
 As the business, I want search engines to find and respect the right pages, so that our organic traffic target is reachable.
 
 Acceptance criteria
-- Given the site, when `/sitemap.xml` is requested, then a valid sitemap is returned listing the home page, every active city page, every qualifying city-category and locality-category page (ADR-020), every published provider profile, and the public static pages.
+- Given the site, when `/sitemap.xml` is requested, then a valid sitemap is returned listing the home page, every active city page, every qualifying city-category and locality-category page (ADR-029), every published provider profile, and the public static pages.
 - Given a sitemap entry, when I inspect it, then it has a last-modified date that reflects when that page's content last changed.
 - Given more than 50,000 URLs, when the sitemap is produced, then it is split into a sitemap index with child sitemaps.
 - Given a provider is unpublished, suspended or deleted, when the sitemap is next refreshed, then that URL is gone from it.
@@ -853,7 +963,8 @@ Acceptance criteria
 - Given a provider's slug changes, when the old address is requested, then it permanently redirects to the new one, and the old address is removed from the sitemap.
 - Given a chain of slug changes, when the oldest address is requested, then it redirects straight to the current one in a single hop.
 - Given a page address with a trailing slash or different capitalisation, when it is requested, then it redirects permanently to the single canonical form.
-- Given a locality-category page excluded from indexing (ADR-020), when it is fetched, then its canonical points at the corresponding city-category page.
+- Given a locality-category page below the 3-provider threshold (ADR-029), when it is fetched, then its canonical points at the corresponding city-category page and the page is not marked "do not index" - a "do not index" instruction and a canonical pointing elsewhere are contradictory signals and search engines discard the canonical.
+- Given any public page that is not prerendered, when a crawler that does not run JavaScript fetches it, then the returned HTML already carries that page's own title, meta description and canonical - never a generic placeholder shared by every address.
 
 Out of scope
 - Vanity or short URLs.
@@ -1083,7 +1194,7 @@ These P0 stories are larger than one developer-day. The Project Manager splits t
 | E7-S1 Provider sign-up | a) wizard shell with draft saving, b) business details + categories + location, c) submit and review handoff |
 | E7-S3 Services and areas | a) services CRUD, b) service areas and travel fees |
 | E8-S2 Review queue | a) new-profile approval, b) profile-edit diff and approval, c) verification documents |
-| E8-S6 CSV import | a) dry run and validation report, b) apply and row report |
+| E8-S6 CSV import | a) dry run and validation report, b) apply, provenance and row report, c) undo a batch |
 | E9-S1 Prerendered pages | a) city-category, b) locality-category plus the thin-page rule |
 | E12-S3 Deployment | a) staging pipeline, b) production pipeline and approval, c) domains and TLS |
 

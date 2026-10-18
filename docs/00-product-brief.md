@@ -57,10 +57,11 @@ Locations are modelled as city -> locality -> pincode, with latitude/longitude o
 ## 6. Data sourcing (important)
 Do not scrape Google, Justdial, Instagram or competitor sites; this violates their terms.
 Supply comes from: (a) provider self-signup, (b) admin-entered or CSV-imported listings from sources we are allowed to use (own research, partnerships), (c) "claim this listing" so providers can take over a draft listing.
+Every listing we create ourselves records where its information came from, whether it was entered by hand (E8-S5) or imported from a file (E8-S6). An import with no source is refused. The source is kept for our records and is never shown publicly.
 Unclaimed listings are labelled "Unclaimed" and show only public business info.
 
 ## 7. Success metrics (first 6 months after launch)
-- Listed providers: 500+ across NCR, 60% with 3+ photos.
+- Listed providers: 500+ across NCR, 60% with 3+ photos. This target is not reachable by hand-entry, which is why CSV import (E8-S6) is a launch blocker rather than a convenience (ADR-013).
 - Monthly active customers and enquiries sent per month (primary north-star: enquiries sent).
 - Provider response rate within 24h: 70%+.
 - Share of traffic from organic search: 40%+.
