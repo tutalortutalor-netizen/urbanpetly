@@ -1,0 +1,355 @@
+/**
+ * UrbanPetly design tokens — the single source of truth for raw values.
+ *
+ * Tailwind v4. Apps import this once, after Tailwind itself:
+ *
+ *   @import 'tailwindcss';
+ *   @import '@urbanpetly/ui/theme.css';
+ *
+ * There is no tailwind.config and no preset. Docs: docs/design/design-system.md
+ *
+ * Layering (design-system.md §1):
+ *   primitives (--up-*)  raw palette, plain CSS, never used directly in app code
+ *     v
+ *   semantic (@theme)    what a colour means; this is what components use
+ *     v
+ *   utilities            bg-primary, text-fg-muted, border-border-strong
+ *
+ * Primitives stay OUTSIDE @theme on purpose: they are plain custom properties, so
+ * a brand change is a values-only edit and never touches a variable name, a
+ * component or a utility class. The semantic layer uses `@theme inline` so the
+ * utility emits `var(--color-primary)` rather than a baked-in literal — without
+ * `inline`, any runtime override of a primitive would stop cascading.
+ * `static` emits every theme variable even when no utility referenced it, which
+ * is what keeps `resolveToken()` working for map/canvas code.
+ *
+ * Brand: "Indigo Care" — chosen by the founder on 2026-10-18 (Paperclip SAM-7).
+ * The rejected alternative is kept for the record in docs/design/brand-direction.md.
+ */
+
+:root {
+  /* ----------------------------------------------------------------------
+   * Primitives — "Indigo Care"
+   * brand = indigo, accent = rose, neutral = cool slate
+   * -------------------------------------------------------------------- */
+  --up-brand-50: #eef2ff;
+  --up-brand-100: #e0e7ff;
+  --up-brand-200: #c7d2fe;
+  --up-brand-300: #a5b4fc;
+  --up-brand-400: #818cf8;
+  --up-brand-500: #6366f1;
+  --up-brand-600: #4f46e5;
+  --up-brand-700: #4338ca;
+  --up-brand-800: #3730a3;
+  --up-brand-900: #312e81;
+
+  --up-accent-50: #fff1f2;
+  --up-accent-100: #ffe4e6;
+  --up-accent-200: #fecdd3;
+  --up-accent-300: #fda4af;
+  --up-accent-400: #fb7185;
+  --up-accent-500: #e11d48;
+  --up-accent-600: #be123c;
+  --up-accent-700: #9f1239;
+
+  --up-neutral-0: #ffffff;
+  --up-neutral-50: #f8fafc;
+  --up-neutral-100: #f1f5f9;
+  --up-neutral-200: #e2e8f0;
+  --up-neutral-300: #cbd5e1;
+  --up-neutral-400: #94a3b8; /* 2.56:1 — DECORATIVE ONLY, never an interactive border */
+  --up-neutral-500: #5b6a7f; /* >=4.9:1 on every background we use it on */
+  --up-neutral-600: #475569;
+  --up-neutral-700: #334155;
+  --up-neutral-800: #1e293b;
+  --up-neutral-900: #0f172a;
+
+  --up-success-500: #15803d;
+  --up-success-50: #ecfdf3;
+  --up-success-700: #166534;
+  --up-warning-500: #b45309;
+  --up-warning-50: #fff8eb;
+  --up-warning-700: #854d0e;
+  --up-danger-500: #dc2626;
+  --up-danger-50: #fef2f2;
+  --up-danger-700: #991b1b;
+  --up-info-500: #0369a1;
+  --up-info-50: #eff8ff;
+  --up-info-700: #075985;
+
+  /* ----------------------------------------------------------------------
+   * Type scale primitives. Only the four sizes that change at >=768px need an
+   * indirection; the semantic --text-* below point at these, so the responsive
+   * step happens in plain CSS and the utilities follow it. (design-system.md §3)
+   * -------------------------------------------------------------------- */
+  --up-text-display: 1.75rem; /* 28px */
+  --up-text-display-lh: 2.125rem;
+  --up-text-h1: 1.5rem;
+  --up-text-h1-lh: 1.875rem;
+  --up-text-h2: 1.25rem;
+  --up-text-h2-lh: 1.625rem;
+  --up-text-h3-lh: 1.5rem;
+
+  /* ----------------------------------------------------------------------
+   * Motion, z-index and target size.
+   * These have no Tailwind v4 theme namespace, so they stay plain custom
+   * properties. Use them as `duration-[var(--duration-fast)]`,
+   * `z-[var(--z-header)]`, `min-h-target`.
+   * -------------------------------------------------------------------- */
+  --duration-fast: 120ms;
+  --duration-base: 180ms;
+  --duration-slow: 240ms;
+
+  --z-base: 0;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-header: 300;
+  --z-overlay: 400;
+  --z-modal: 500;
+  --z-toast: 600;
+
+  /* Minimum interactive target (05-ux-spec: 44px) */
+  --target-min: 44px;
+}
+
+/* Wider type scale from the md breakpoint (768px) — see design-system.md §3 */
+@media (min-width: 768px) {
+  :root {
+    --up-text-display: 2.5rem;
+    --up-text-display-lh: 2.875rem;
+    --up-text-h1: 2rem;
+    --up-text-h1-lh: 2.5rem;
+    --up-text-h2: 1.5rem;
+    --up-text-h2-lh: 2rem;
+    --up-text-h3-lh: 1.625rem;
+  }
+}
+
+@theme inline static {
+  /* ----------------------------------------------------------------------
+   * Colour. Tailwind's default palette is cleared first: if it is not a token,
+   * it does not exist, so `bg-blue-500` simply fails to generate.
+   * -------------------------------------------------------------------- */
+  --color-*: initial;
+
+  --color-bg: var(--up-neutral-50);
+  --color-surface: var(--up-neutral-0);
+  --color-surface-sunken: var(--up-neutral-100);
+  --color-surface-raised: var(--up-neutral-0);
+  --color-overlay: rgb(15 23 42 / 56%);
+
+  --color-fg: var(--up-neutral-900);
+  --color-fg-muted: var(--up-neutral-600);
+  --color-fg-subtle: var(--up-neutral-500);
+  --color-fg-inverse: var(--up-neutral-50);
+
+  --color-border: var(--up-neutral-300); /* decorative only */
+  --color-border-strong: var(--up-neutral-500); /* interactive controls — must stay >=3:1 */
+
+  --color-primary: var(--up-brand-600);
+  --color-primary-hover: var(--up-brand-700);
+  --color-primary-active: var(--up-brand-800);
+  --color-primary-subtle: var(--up-brand-50);
+  --color-primary-fg: var(--up-neutral-0);
+
+  --color-accent: var(--up-accent-500);
+  --color-accent-subtle: var(--up-accent-50);
+  --color-accent-fg: var(--up-neutral-0); /* white on rose-600 = 4.70:1; dark ink is 3.80:1 and fails */
+  --color-accent-strong: var(--up-accent-700); /* accent ink ON accent-subtle — 7.30:1 */
+
+  --color-success: var(--up-success-500);
+  --color-success-subtle: var(--up-success-50);
+  --color-success-fg: var(--up-success-700);
+  --color-warning: var(--up-warning-500);
+  --color-warning-subtle: var(--up-warning-50);
+  --color-warning-fg: var(--up-warning-700);
+  --color-danger: var(--up-danger-500);
+  --color-danger-subtle: var(--up-danger-50);
+  --color-danger-fg: var(--up-danger-700);
+  --color-info: var(--up-info-500);
+  --color-info-subtle: var(--up-info-50);
+  --color-info-fg: var(--up-info-700);
+
+  --color-focus-ring: var(--up-brand-600);
+
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --color-inherit: inherit;
+
+  /* ----------------------------------------------------------------------
+   * Breakpoints — must match `breakpoint` in src/tokens.ts
+   * -------------------------------------------------------------------- */
+  --breakpoint-*: initial;
+  --breakpoint-sm: 480px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+
+  /* ----------------------------------------------------------------------
+   * Typography
+   * -------------------------------------------------------------------- */
+  --font-*: initial;
+  --font-heading: "Outfit", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", monospace;
+
+  --text-*: initial;
+  --text-display: var(--up-text-display);
+  --text-display--line-height: var(--up-text-display-lh);
+  --text-display--font-weight: 700;
+  --text-h1: var(--up-text-h1);
+  --text-h1--line-height: var(--up-text-h1-lh);
+  --text-h1--font-weight: 700;
+  --text-h2: var(--up-text-h2);
+  --text-h2--line-height: var(--up-text-h2-lh);
+  --text-h2--font-weight: 600;
+  --text-h3: 1.125rem;
+  --text-h3--line-height: var(--up-text-h3-lh);
+  --text-h3--font-weight: 600;
+  --text-body-lg: 1.0625rem;
+  --text-body-lg--line-height: 1.625rem;
+  --text-body: 1rem;
+  --text-body--line-height: 1.5rem;
+  --text-body-sm: 0.875rem;
+  --text-body-sm--line-height: 1.25rem;
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1rem;
+  --text-caption--font-weight: 500;
+  --text-price: 1rem;
+  --text-price--line-height: 1.5rem;
+  --text-price--font-weight: 600;
+
+  /* ----------------------------------------------------------------------
+   * Spacing (4px base). Only these steps exist — the dynamic scale is cleared
+   * so `p-7` fails loudly instead of inventing a value nobody designed.
+   * -------------------------------------------------------------------- */
+  --spacing: initial;
+  --spacing-*: initial;
+  --spacing-0: 0px;
+  --spacing-px: 1px;
+  --spacing-1: 0.25rem;
+  --spacing-2: 0.5rem;
+  --spacing-3: 0.75rem;
+  --spacing-4: 1rem;
+  --spacing-5: 1.25rem;
+  --spacing-6: 1.5rem;
+  --spacing-8: 2rem;
+  --spacing-10: 2.5rem;
+  --spacing-12: 3rem;
+  --spacing-16: 4rem;
+  --spacing-20: 5rem;
+  --spacing-24: 6rem;
+  --spacing-target: var(--target-min);
+
+  /* ----------------------------------------------------------------------
+   * Radius and elevation. `DEFAULT` is deliberately kept so the bare `rounded`
+   * and `shadow` classes still work (they are the ones people type from habit).
+   * -------------------------------------------------------------------- */
+  --radius-*: initial;
+  --radius: 12px; /* bare `rounded` === `rounded-md` */
+  --radius-none: 0;
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 9999px;
+  --radius-full: 9999px;
+
+  --shadow-*: initial;
+  --shadow: 0 2px 6px rgb(15 23 42 / 8%); /* bare `shadow` === `shadow-sm` */
+  --shadow-none: none;
+  --shadow-xs: 0 1px 2px rgb(15 23 42 / 6%);
+  --shadow-sm: 0 2px 6px rgb(15 23 42 / 8%);
+  --shadow-md: 0 8px 20px rgb(15 23 42 / 10%);
+  --shadow-lg: 0 16px 36px rgb(15 23 42 / 14%);
+
+  /* ----------------------------------------------------------------------
+   * Motion. A bare `transition` must not be instant, so the v4 defaults point
+   * at our tokens (design-system.md §7).
+   * -------------------------------------------------------------------- */
+  --ease-*: initial;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-enter: cubic-bezier(0, 0, 0, 1);
+  --ease-exit: cubic-bezier(0.3, 0, 1, 1);
+
+  --default-transition-duration: var(--duration-base);
+  --default-transition-timing-function: var(--ease-standard);
+
+  /* ----------------------------------------------------------------------
+   * Layout helpers used across screens (design-system.md §5)
+   * -------------------------------------------------------------------- */
+  --container-content: 1200px;
+  --container-prose: 68ch;
+  --container-form: 560px;
+
+  --aspect-card: 4 / 3;
+  --aspect-hero: 3 / 2;
+}
+
+/* Prices, distances, ratings and counts must not shift while loading. */
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* The standard focus ring, for the rare control that draws its own. §9 */
+@utility focus-ring {
+  outline: 3px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Sticky bottom bars must clear the iOS home indicator. */
+@utility pb-safe {
+  padding-bottom: max(var(--spacing-4), env(safe-area-inset-bottom));
+}
+
+/* Accessible visually-hidden text that appears on focus (skip links). */
+@utility sr-only-focusable {
+  &:not(:focus):not(:focus-within) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+/**
+ * Reduced motion is handled once, here. Components must not reimplement it.
+ * WCAG 2.3.3 / 06-nfr accessibility.
+ *
+ * Motion that carries meaning — a spinner saying "still working", a skeleton
+ * saying "not loaded yet" — opts out with [data-motion-essential] and is
+ * expected to present a calmer form itself (design-system.md §7).
+ */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 1ms;
+    --duration-base: 1ms;
+    --duration-slow: 1ms;
+  }
+
+  *:not([data-motion-essential]),
+  *:not([data-motion-essential])::before,
+  *:not([data-motion-essential])::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/**
+ * Focus is never removed. design-system.md §9.
+ *
+ * Deliberately NOT wrapped in :where() — zero specificity let any stray
+ * `focus:outline-none` win silently. This still loses to `.outline-none:focus`
+ * on specificity, so `outline-none` is banned by lint (see packages/ui/README.md);
+ * the rule here is the backstop, not the whole policy.
+ */
+:focus-visible {
+  outline: 3px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
