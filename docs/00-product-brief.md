@@ -18,14 +18,17 @@ vets, groomers, boarders, trainers, walkers, pet stores and more.
 
 ## 4. Scope
 
+"v1" means everything marked **P0 or P1** in 01-epics-and-user-stories.md (ADR-012).
+The parking lot is **P2 plus the out-of-scope list below**. Nothing moves between the two without an ADR.
+
 ### In scope for v1
 - Service categories: Veterinary, Grooming, Boarding and Daycare, Training, Walking and Sitting, Pet Stores, Pet Transport.
 - Discovery: search by category, locality and radius, filters, sort, list and map views.
-- Provider profile pages: services, prices, photos, hours, location, reviews, contact.
+- Provider profile pages: services, prices, photos, hours, location, reviews, and direct contact (click-to-call and WhatsApp).
 - Service mode on every service: `at_provider`, `at_home`, or `both`. At-home services declare a service area (pincodes and/or radius).
 - Enquiry and booking requests (provider confirms; no online payment in v1).
 - Phone OTP login for customers and providers (OTP API supplied later; abstracted behind an interface).
-- Verified reviews and ratings (one per customer per provider, moderated).
+- Verified reviews and ratings: one per customer per provider, only after a completed request, moderated (ADR-015).
 - Pet profiles and favourites for customers.
 - Provider onboarding, "claim this listing" flow, and provider dashboard.
 - Admin back office: verification, moderation, categories, reports, CSV import.
@@ -40,6 +43,12 @@ vets, groomers, boarders, trainers, walkers, pet stores and more.
 - Adoption and rescue marketplace.
 - Cities outside Delhi NCR; Hindi UI (design for i18n now, ship English first).
 - Scraping third-party sites (see data sourcing).
+- SMS and WhatsApp notifications - the provider is emailed and confirms with the customer themselves (ADR-016).
+- Reviews from walk-in customers, with or without proof of visit (ADR-015).
+- Monetisation modelling of any kind: no plans, commissions, invoicing or billing data (ADR-021).
+- Rescheduling a request by the customer, cancellation fees and no-show handling (cancel and re-request in v1).
+- Changing the mobile number on an account, and transferring a listing between owners (admin does this by hand).
+- Call masking or proxy phone numbers.
 
 ## 5. Geography
 Launch: Delhi NCR (Delhi, Gurgaon/Gurugram, Noida, Faridabad, Ghaziabad).
@@ -48,10 +57,11 @@ Locations are modelled as city -> locality -> pincode, with latitude/longitude o
 ## 6. Data sourcing (important)
 Do not scrape Google, Justdial, Instagram or competitor sites; this violates their terms.
 Supply comes from: (a) provider self-signup, (b) admin-entered or CSV-imported listings from sources we are allowed to use (own research, partnerships), (c) "claim this listing" so providers can take over a draft listing.
+Every listing we create ourselves records where its information came from, whether it was entered by hand (E8-S5) or imported from a file (E8-S6). An import with no source is refused. The source is kept for our records and is never shown publicly.
 Unclaimed listings are labelled "Unclaimed" and show only public business info.
 
 ## 7. Success metrics (first 6 months after launch)
-- Listed providers: 500+ across NCR, 60% with 3+ photos.
+- Listed providers: 500+ across NCR, 60% with 3+ photos. This target is not reachable by hand-entry, which is why CSV import (E8-S6) is a launch blocker rather than a convenience (ADR-013).
 - Monthly active customers and enquiries sent per month (primary north-star: enquiries sent).
 - Provider response rate within 24h: 70%+.
 - Share of traffic from organic search: 40%+.
